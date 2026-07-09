@@ -17,13 +17,19 @@
       "expectedSkill": "to-spec",
       "checks": [
         "Includes problem, goals, non-goals, constraints, UX/API contract, rollout, validation, and open questions.",
+        "Pressure-tests fuzzy terms, edge cases, contradictions, and assumptions before freezing the spec.",
+        "Uses existing repo vocabulary or ADRs when local context provides them.",
+        "Names the highest useful testing seams for external behavior.",
         "Includes only decision-rich prototype output, not throw-away demo code.",
         "Avoids brittle file-by-file planning."
       ]
     }
   ],
   "traceExpectations": [
+    "Spec synthesizes existing context before asking new questions.",
+    "Pressure-testing stays bounded to scope-changing questions or assumptions.",
     "Repo/context reading precedes spec decisions when local code matters.",
+    "Validation names behavior seams rather than implementation details.",
     "Open questions are limited to scope-changing unknowns."
   ]
 }

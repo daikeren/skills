@@ -17,13 +17,18 @@
       "expectedSkill": "to-tickets",
       "checks": [
         "Uses expand-contract sequencing.",
-        "Each ticket has blockers, acceptance criteria, verification, rollout notes, and rollback risk.",
+        "Uses tracer-bullet vertical slices sized for a fresh agent context window.",
+        "Each ticket has explicit Blocked by edges, acceptance criteria, verification, rollout notes, and rollback risk.",
+        "Identifies the frontier tickets that can start immediately.",
         "Orders by release safety rather than by architecture layers."
       ]
     }
   ],
   "traceExpectations": [
+    "Tickets are tracer-bullet vertical slices through relevant layers.",
     "Tickets are independently reviewable and mergeable where possible.",
+    "Frontier means tickets whose blockers are clear.",
+    "Granularity review asks whether tickets are too coarse, too fine, or wrongly blocked.",
     "Cleanup follows compatibility and rollout."
   ]
 }

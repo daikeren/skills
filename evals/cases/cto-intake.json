@@ -17,6 +17,7 @@
       "expectedSkill": "cto-intake",
       "checks": [
         "Identifies product goal, user impact, technical context, constraints, risks, stakeholders, and decision horizon.",
+        "Pressure-tests fuzzy terms, edge cases, contradictions, and hidden tradeoffs without turning intake into a long interview.",
         "Asks only blocking questions or states safe assumptions.",
         "Converts intake into a next useful action."
       ]
@@ -24,6 +25,7 @@
   ],
   "traceExpectations": [
     "Read-only context gathering precedes recommendations.",
+    "Questions are limited to those that can change scope, design, rollout, or risk.",
     "Risks include product, architecture, security/privacy, operations, cost, and team speed."
   ]
 }

@@ -16,6 +16,7 @@
       "prompt": "We need a recommendation for a new analytics layer.",
       "expectedSkill": "strategy-to-options",
       "checks": [
+        "Pressure-tests assumptions or edge cases that could change the recommendation.",
         "Produces 2-4 real options, including defer or no-build when plausible.",
         "Scores options across user impact, architecture, security/privacy, operations, cost, speed, and reversibility.",
         "Names when each option should be chosen."
@@ -23,6 +24,7 @@
     }
   ],
   "traceExpectations": [
+    "Fuzzy terms, contradictions, and tradeoffs are tested before recommendation.",
     "The recommendation follows option comparison.",
     "Uncertainty and evidence gaps are explicit."
   ]

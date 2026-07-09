@@ -1,0 +1,32 @@
+{
+  "skill": "setup-repo-context",
+  "version": 1,
+  "purpose": "Check that repo context setup records local conventions from evidence without imposing tool-specific defaults.",
+  "positivePrompts": [
+    "Set up repo context so future agents know where specs, tickets, verification, and lessons live.",
+    "Refresh the agent repo context after our package scripts and docs changed."
+  ],
+  "negativePrompts": [
+    "Review this diff for authorization regressions.",
+    "Turn this strategy into options."
+  ],
+  "cases": [
+    {
+      "id": "evidence-backed-context",
+      "prompt": "Create a lightweight repo context for a project with existing AGENTS.md, package scripts, docs/decisions, and no visible tracker convention.",
+      "expectedSkill": "setup-repo-context",
+      "checks": [
+        "Inspects existing instructions, docs, scripts, and artifacts before proposing a new context file.",
+        "Labels conventions as explicit, inferred, or unknown.",
+        "Records verification commands, artifact locations, review policy, tooling evidence, lesson store path, and AFK handoff only when supported.",
+        "Does not assume a host, tracker, CI, framework, package manager, or monorepo layout.",
+        "Returns unknown tracker convention with a safe fallback instead of inventing one."
+      ]
+    }
+  ],
+  "traceExpectations": [
+    "Existing repo context and instructions are preferred over new structure.",
+    "Stale entries are updated only when current evidence contradicts them.",
+    "If no write target is clear, the output gives a context snapshot and candidate locations."
+  ]
+}

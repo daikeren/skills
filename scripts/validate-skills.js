@@ -6,6 +6,8 @@ const path = require("path");
 const root = process.cwd();
 const skillRoot = path.join(root, "skills");
 const commandRoot = path.join(root, "commands");
+const fixturesRoot = path.join(root, "evals", "fixtures");
+const DESCRIPTION_COLLISION_THRESHOLD = 0.75;
 const allowedFrontmatterKeys = new Set([
   "name",
   "description",
@@ -16,6 +18,35 @@ const allowedFrontmatterKeys = new Set([
 ]);
 
 const errors = [];
+const skillDescriptions = [];
+const descriptionStopWords = new Set([
+  "a",
+  "an",
+  "and",
+  "are",
+  "as",
+  "at",
+  "be",
+  "before",
+  "by",
+  "for",
+  "from",
+  "how",
+  "in",
+  "including",
+  "into",
+  "is",
+  "it",
+  "of",
+  "on",
+  "or",
+  "the",
+  "this",
+  "to",
+  "use",
+  "when",
+  "with"
+]);
 
 function fail(message) {
   errors.push(message);
@@ -118,6 +149,98 @@ function stripQuotes(value) {
   return value;
 }
 
+function descriptionTokens(text) {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .split(/\s+/)
+    .filter((word) => word.length > 2 && !descriptionStopWords.has(word));
+}
+
+function descriptionTermCounts(text) {
+  const counts = new Map();
+  for (const token of descriptionTokens(text)) {
+    counts.set(token, (counts.get(token) || 0) + 1);
+  }
+  return counts;
+}
+
+function descriptionIdf(docs) {
+  const documentFrequency = new Map();
+  for (const doc of docs) {
+    for (const term of new Set(descriptionTokens(doc))) {
+      documentFrequency.set(term, (documentFrequency.get(term) || 0) + 1);
+    }
+  }
+
+  const idf = new Map();
+  for (const [term, count] of documentFrequency.entries()) {
+    idf.set(term, Math.log((1 + docs.length) / (1 + count)) + 1);
+  }
+  return idf;
+}
+
+function descriptionVector(text, idf) {
+  const counts = descriptionTermCounts(text);
+  const vector = new Map();
+  let total = 0;
+  for (const count of counts.values()) {
+    total += count;
+  }
+  if (total === 0) {
+    return vector;
+  }
+
+  for (const [term, count] of counts.entries()) {
+    vector.set(term, (count / total) * (idf.get(term) || 1));
+  }
+  return vector;
+}
+
+function cosineSimilarity(left, right) {
+  let dot = 0;
+  let leftNorm = 0;
+  let rightNorm = 0;
+
+  for (const value of left.values()) {
+    leftNorm += value * value;
+  }
+  for (const value of right.values()) {
+    rightNorm += value * value;
+  }
+  for (const [term, value] of left.entries()) {
+    dot += value * (right.get(term) || 0);
+  }
+
+  if (leftNorm === 0 || rightNorm === 0) {
+    return 0;
+  }
+  return dot / (Math.sqrt(leftNorm) * Math.sqrt(rightNorm));
+}
+
+function validateDescriptionCollisions() {
+  if (skillDescriptions.length < 2) {
+    return;
+  }
+
+  const idf = descriptionIdf(skillDescriptions.map((item) => item.description));
+  const vectors = skillDescriptions.map((item) => ({
+    ...item,
+    vector: descriptionVector(item.description, idf)
+  }));
+
+  for (let leftIndex = 0; leftIndex < vectors.length; leftIndex += 1) {
+    for (let rightIndex = leftIndex + 1; rightIndex < vectors.length; rightIndex += 1) {
+      const left = vectors[leftIndex];
+      const right = vectors[rightIndex];
+      const score = cosineSimilarity(left.vector, right.vector);
+      if (score >= DESCRIPTION_COLLISION_THRESHOLD) {
+        fail(`${left.file} and ${right.file}: descriptions are too similar (${score.toFixed(2)} >= ${DESCRIPTION_COLLISION_THRESHOLD}); make trigger language more distinct`);
+      }
+    }
+  }
+}
+
 function validateSkillDirectory(dirent) {
   if (!dirent.isDirectory()) return;
 
@@ -165,6 +288,11 @@ function validateSkillDirectory(dirent) {
   if (!data.description) {
     fail(`${relFile}: missing description`);
   } else {
+    skillDescriptions.push({
+      skill: name,
+      file: relFile,
+      description: data.description
+    });
     if (data.description.length > 1024) {
       fail(`${relFile}: description exceeds 1024 characters`);
     }
@@ -233,6 +361,31 @@ function validateJsonFile(rel, requiredKeys = []) {
   }
 
   return data;
+}
+
+function validateEvalFixtureList(rel, item) {
+  if (item.fixtures === undefined) {
+    return;
+  }
+  if (!Array.isArray(item.fixtures)) {
+    fail(`${rel}:${item.id}: fixtures must be an array of fixture file names`);
+    return;
+  }
+
+  for (const fixture of item.fixtures) {
+    if (typeof fixture !== "string" || !fixture.trim()) {
+      fail(`${rel}:${item.id}: fixtures must contain non-empty file names`);
+      continue;
+    }
+    if (path.isAbsolute(fixture) || fixture.includes("..")) {
+      fail(`${rel}:${item.id}: fixture ${fixture} must stay inside evals/fixtures`);
+      continue;
+    }
+    const full = path.join(fixturesRoot, fixture);
+    if (!full.startsWith(`${fixturesRoot}${path.sep}`) || !fs.existsSync(full)) {
+      fail(`${rel}:${item.id}: fixture ${fixture} does not exist`);
+    }
+  }
 }
 
 function validatePackageAndManifests() {
@@ -318,6 +471,12 @@ function validateEvalCases() {
     if (!Array.isArray(data.traceExpectations) || data.traceExpectations.length === 0) {
       fail(`${rel}: traceExpectations must be a non-empty array`);
     }
+    if (data.fixtures !== undefined) {
+      fail(`${rel}: fixtures must be declared per case, not at the file top level`);
+    }
+    for (const item of data.cases || []) {
+      validateEvalFixtureList(rel, item);
+    }
   }
 }
 
@@ -338,6 +497,7 @@ function main() {
     for (const dirent of dirents) {
       validateSkillDirectory(dirent);
     }
+    validateDescriptionCollisions();
   }
 
   if (!fs.existsSync(commandRoot)) {

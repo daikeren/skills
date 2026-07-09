@@ -1,4 +1,4 @@
-# CTO Decision Rubric
+# Decision Rubric
 
 Use this rubric when a decision affects product direction, architecture, risk, cost, operations, or team speed.
 

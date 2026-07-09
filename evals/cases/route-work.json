@@ -1,20 +1,20 @@
 {
-  "skill": "cto",
+  "skill": "route-work",
   "version": 1,
-  "purpose": "Check that the CTO router selects one focused skill instead of becoming a broad framework.",
+  "purpose": "Check that the work router selects one focused skill instead of becoming a broad framework.",
   "positivePrompts": [
-    "Use CTO help to decide what skill should handle this.",
-    "I do not know whether this needs intake, options, spec, tickets, or review."
+    "Use route-work to decide what skill should handle this.",
+    "I do not know whether this needs scoping, options, spec, tickets, or review."
   ],
   "negativePrompts": [
-    "Directly use executive-code-review on this diff.",
+    "Directly use review-code on this diff.",
     "Run the research-brief skill for this vendor comparison."
   ],
   "cases": [
     {
       "id": "ambiguous-routing",
       "prompt": "We have a vague product architecture change and need to figure out the next step.",
-      "expectedSkill": "cto",
+      "expectedSkill": "route-work",
       "checks": [
         "Routes to one focused skill.",
         "Explains why that skill is the right next step.",

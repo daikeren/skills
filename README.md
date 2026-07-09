@@ -1,4 +1,4 @@
-# CTO-Grade Agent Skills
+# Agent Skills for Software Delivery
 
 Reusable agent skills for coding agents that need to operate beyond code generation. The skills in this repository help agents balance product goals, architecture, user impact, security and privacy, cost, operations, and team speed while still shipping small verified changes.
 
@@ -16,7 +16,7 @@ Useful variants:
 
 ```bash
 npx skills@latest add daikeren/skills --list
-npx skills@latest add daikeren/skills --skill cto-intake --skill executive-code-review
+npx skills@latest add daikeren/skills --skill scope-work --skill review-code
 npx skills@latest add daikeren/skills -a codex -a claude-code -a opencode -a pi
 ```
 
@@ -42,19 +42,39 @@ This repo now includes lightweight tool-specific adapters:
 
 ## Included Skills
 
-- `cto`: route CTO-grade work to the right focused skill.
-- `cto-intake`: frame ambiguous or consequential work before execution.
+- `route-work`: route work to the right focused skill.
+- `scope-work`: frame ambiguous or consequential work before execution.
 - `research-brief`: produce source-backed research with explicit evidence quality.
 - `prototype`: run disposable proof-of-concept exploration without production creep.
+- `setup-repo-context`: detect and maintain lightweight repo-specific context from local evidence.
 - `strategy-to-options`: turn a strategic question into 2-4 real options.
 - `to-spec`: convert an agreed direction into a lightweight implementation spec.
 - `to-tickets`: break specs into independently reviewable and releasable slices.
 - `architecture-review`: review architecture, dependencies, data flow, and migration risk.
 - `product-surface-review`: review workflows, states, accessibility, trust, and support burden.
 - `security-privacy-review`: review permissions, sensitive data, trust boundaries, and abuse cases.
-- `implementation-stewardship`: guide coding work to stay small, idiomatic, reversible, and verified.
-- `executive-code-review`: review diffs with CTO-grade attention to regressions, product risk, security/privacy, operations, and tests.
-- `compound-learning`: capture reusable validated lessons after work or review.
+- `implement-change`: guide coding work to stay small, idiomatic, reversible, and verified.
+- `review-code`: review diffs with attention to regressions, product risk, security/privacy, operations, and tests.
+- `compound-learning`: read and capture reusable validated lessons before and after work or review.
+
+## Quick Reference
+
+| I want to... | Use this skill |
+| --- | --- |
+| Pick the right skill for unclear work | `route-work` |
+| Scope ambiguous or high-impact work | `scope-work` |
+| Research current facts or evidence | `research-brief` |
+| Test an idea with a disposable proof | `prototype` |
+| Set up or refresh repo-specific working context | `setup-repo-context` |
+| Compare strategic or technical options | `strategy-to-options` |
+| Turn a direction into an implementation spec | `to-spec` |
+| Slice work into releasable tickets | `to-tickets` |
+| Review architecture or migration risk | `architecture-review` |
+| Review product surfaces and workflows | `product-surface-review` |
+| Review security, privacy, or abuse risk | `security-privacy-review` |
+| Implement a small verified change | `implement-change` |
+| Review a code diff before release | `review-code` |
+| Read or capture reusable lessons | `compound-learning` |
 
 ## Repo Shape
 
@@ -97,16 +117,17 @@ The live runner executes the behavioral cases and writes `evals/results/live-lat
 
 ## Daily Flow
 
-Use the `cto` router when the entry point is unclear. Otherwise, pick the earliest useful phase:
+Use `setup-repo-context` when entering a new repository, when local conventions are stale, or when a repo needs a lightweight shared context for agents. Use the `route-work` router when the entry point is unclear. Otherwise, pick the earliest useful phase:
 
 ```text
-cto-intake
+setup-repo-context (optional per repo)
+  -> scope-work
   -> strategy-to-options
   -> research-brief or prototype when evidence is missing
   -> to-spec
   -> to-tickets
-  -> implementation-stewardship
-  -> executive-code-review
+  -> implement-change
+  -> review-code
   -> compound-learning
 ```
 
@@ -115,6 +136,12 @@ Review-specific shortcuts:
 - Use `architecture-review` for service boundaries, data flow, scaling, reliability, migrations, and dependencies.
 - Use `product-surface-review` for user workflows, states, trust, support burden, and accessibility.
 - Use `security-privacy-review` for auth, permissions, sensitive data, integrations, billing/admin surfaces, and abuse cases.
+
+## Optional Per-Repo Context
+
+`setup-repo-context` helps agents discover and, when requested or locally supported, maintain a compact repo context file. The context should point to existing instructions first and record evidence-backed conventions such as spec and ticket locations, review severity policy, verification commands, tracker/CI/tooling signals, the lesson store path for `compound-learning`, decision records, and AFK handoff expectations.
+
+The skill is intentionally tool-agnostic: it does not require a specific host, issue tracker, CI system, package manager, framework, or monorepo layout. If no repo convention exists, it should return a context snapshot and candidate location rather than silently imposing one.
 
 ## Development Loop
 

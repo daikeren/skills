@@ -1,10 +1,10 @@
 {
-  "skill": "cto-intake",
+  "skill": "scope-work",
   "version": 1,
   "purpose": "Check that ambiguous consequential work is framed before execution.",
   "positivePrompts": [
     "We need to rethink this product architecture before committing engineering time.",
-    "This request is ambiguous but high impact. Help me frame the CTO intake first."
+    "This request is ambiguous but high impact. Help me scope the work first."
   ],
   "negativePrompts": [
     "Review this small typo fix.",
@@ -14,12 +14,12 @@
     {
       "id": "ambiguous-platform-decision",
       "prompt": "We might replace our billing integration and need to decide how to proceed.",
-      "expectedSkill": "cto-intake",
+      "expectedSkill": "scope-work",
       "checks": [
         "Identifies product goal, user impact, technical context, constraints, risks, stakeholders, and decision horizon.",
-        "Pressure-tests fuzzy terms, edge cases, contradictions, and hidden tradeoffs without turning intake into a long interview.",
+        "Pressure-tests fuzzy terms, edge cases, contradictions, and hidden tradeoffs without turning scoping into a long interview.",
         "Asks only blocking questions or states safe assumptions.",
-        "Converts intake into a next useful action."
+        "Converts scoped context into a next useful action."
       ]
     }
   ],

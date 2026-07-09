@@ -1,10 +1,10 @@
 {
-  "skill": "implementation-stewardship",
+  "skill": "implement-change",
   "version": 1,
   "purpose": "Check that implementation tasks detect local tooling and keep changes small.",
   "positivePrompts": [
     "Implement this feature carefully and verify the smallest meaningful surface.",
-    "Use implementation-stewardship for this cross-stack bug fix."
+    "Use implement-change for this cross-stack bug fix."
   ],
   "negativePrompts": [
     "Only produce a research brief.",
@@ -14,7 +14,7 @@
     {
       "id": "cross-stack-change",
       "prompt": "Implement a user-visible API and UI change in an unfamiliar repo.",
-      "expectedSkill": "implementation-stewardship",
+      "expectedSkill": "implement-change",
       "checks": [
         "Starts read-only and detects tooling from repo evidence.",
         "Preserves user changes and reuses existing patterns.",

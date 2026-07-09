@@ -1,6 +1,6 @@
 {
   "name": "cto-agent-skills",
-  "description": "CTO-grade agent skills for product, architecture, security, operations, and delivery judgment.",
+  "description": "Agent skills for product, architecture, security, operations, and delivery judgment.",
   "skills": [
     "../../skills"
   ]

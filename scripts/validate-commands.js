@@ -33,7 +33,7 @@ function parseCommand(rel, expectedSkill) {
   const file = path.join(root, rel);
   if (!fs.existsSync(file)) {
     fail(`${rel}: missing command wrapper`);
-    return;
+    return null;
   }
 
   const text = readText(file);
@@ -49,11 +49,13 @@ function parseCommand(rel, expectedSkill) {
   if (!text.includes("$ARGUMENTS")) {
     fail(`${rel}: command body must pass $ARGUMENTS`);
   }
+  return text;
 }
 
 function main() {
   const skills = skillNames();
 
+  const commandFilesByDir = new Map();
   for (const dir of commandDirs) {
     const fullDir = path.join(root, dir);
     if (!fs.existsSync(fullDir)) {
@@ -65,6 +67,7 @@ function main() {
       .readdirSync(fullDir)
       .filter((file) => file.endsWith(".md"))
       .sort();
+    commandFilesByDir.set(dir, commandFiles);
     const expectedFiles = skills.map((name) => `${name}.md`);
 
     for (const expected of expectedFiles) {
@@ -74,6 +77,26 @@ function main() {
     for (const actual of commandFiles) {
       if (!expectedFiles.includes(actual)) {
         fail(`${dir}/${actual}: command does not match a skill`);
+      }
+    }
+  }
+
+  const canonicalTexts = new Map();
+  for (const expected of skills.map((name) => `${name}.md`)) {
+    const rel = path.join("commands", expected);
+    const file = path.join(root, rel);
+    if (fs.existsSync(file)) {
+      canonicalTexts.set(expected, readText(file));
+    }
+  }
+
+  for (const dir of commandDirs.filter((item) => item !== "commands")) {
+    const commandFiles = commandFilesByDir.get(dir) || [];
+    for (const file of commandFiles) {
+      const canonical = canonicalTexts.get(file);
+      const rel = path.join(dir, file);
+      if (canonical !== undefined && readText(path.join(root, rel)) !== canonical) {
+        fail(`${rel}: command wrapper must match commands/${file}; run npm run sync-commands`);
       }
     }
   }

@@ -2,7 +2,7 @@
   "name": "cto-agent-skills",
   "version": "0.1.0",
   "private": false,
-  "description": "CTO-grade agent skills for product, architecture, security, operations, and delivery judgment.",
+  "description": "Agent skills for product, architecture, security, operations, and delivery judgment.",
   "license": "MIT",
   "type": "commonjs",
   "repository": {
@@ -16,7 +16,7 @@
     "opencode",
     "pi",
     "software-engineering",
-    "cto"
+    "software-delivery"
   ],
   "scripts": {
     "validate": "node scripts/validate-skills.js && node scripts/validate-commands.js",

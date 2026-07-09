@@ -1,6 +1,6 @@
 # Product, Architecture, and Security Rubric
 
-Use this rubric for CTO-grade planning and review. Apply only the sections relevant to the task.
+Use this rubric for product and engineering planning or review. Apply only the sections relevant to the task.
 
 ## Product Surface
 

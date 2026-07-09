@@ -2,25 +2,23 @@
 
 Reusable agent skills for coding agents that need to operate beyond code generation. The skills in this repository help agents balance product goals, architecture, user impact, security and privacy, cost, operations, and team speed while still shipping small verified changes.
 
-This is a public core, not a company-specific workflow pack. It does not assume GitHub, Linear, Django, Next.js, rtk, uv, a monorepo, or any single toolchain. Skills should detect local tooling from the repository, CI, docs, and user-provided context before acting.
+This is a public core, not a company-specific workflow pack. It does not assume GitHub, Linear, Django, Next.js, a monorepo, or any single toolchain. Skills should detect local tooling from the repository, CI, docs, and user-provided context before acting.
 
 ## Install
 
 Primary install path:
 
 ```bash
-npx skills@latest add daikeren/cto-agent-skills
+npx skills@latest add daikeren/skills
 ```
 
 Useful variants:
 
 ```bash
-npx skills@latest add daikeren/cto-agent-skills --list
-npx skills@latest add daikeren/cto-agent-skills --skill cto-intake --skill executive-code-review
-npx skills@latest add daikeren/cto-agent-skills -a codex -a claude-code -a opencode -a pi
+npx skills@latest add daikeren/skills --list
+npx skills@latest add daikeren/skills --skill cto-intake --skill executive-code-review
+npx skills@latest add daikeren/skills -a codex -a claude-code -a opencode -a pi
 ```
-
-As of 2026-07-09, the npm `skills` CLI latest package is `1.5.15`, supports GitHub shorthand sources like `owner/repo`, and lists Codex, Claude Code, OpenCode, and Pi among supported agents.
 
 ## Compatibility Notes
 

@@ -18,6 +18,7 @@
       "prompt": "Review a patch that moves an admin-only endpoint to a shared route while preserving the UI gate.",
       "expectedSkill": "executive-code-review",
       "checks": [
+        "Launches or simulates isolated review lenses before aggregating findings.",
         "Reads backend permission checks, not only frontend visibility.",
         "Reports the authorization regression before summaries.",
         "Explains user or data impact and gives a concrete fix direction.",
@@ -39,6 +40,7 @@
   "traceExpectations": [
     "Findings appear before summary.",
     "Each finding has severity, impact, and location when available.",
+    "Review uses parallel subagents when available or names an isolated-pass fallback.",
     "Review considers product, security/privacy, architecture, operations, and tests when relevant."
   ]
 }

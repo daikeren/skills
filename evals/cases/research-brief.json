@@ -1,0 +1,45 @@
+{
+  "skill": "research-brief",
+  "version": 1,
+  "purpose": "Check that research tasks trigger source-backed evidence gathering instead of unsupported recommendation prose.",
+  "positivePrompts": [
+    "Compare current pricing and security posture for three managed Postgres vendors for a B2B SaaS launch.",
+    "Should we adopt this new browser API now or wait? I need a source-backed brief.",
+    "Research whether the latest OpenCode skill support is compatible with our portable SKILL.md repo."
+  ],
+  "negativePrompts": [
+    "Implement the button component from the local design file.",
+    "Review this diff for missing tests.",
+    "Create a throw-away script to see whether this parser works."
+  ],
+  "cases": [
+    {
+      "id": "fast-moving-vendor-choice",
+      "prompt": "We need to choose a vendor where pricing, security posture, and feature set may have changed recently.",
+      "expectedSkill": "research-brief",
+      "checks": [
+        "Defines the decision and required confidence before recommending.",
+        "Uses current primary sources or states that source access is unavailable.",
+        "Separates facts, signals, testimonials, adoption evidence, risks, and recommendations.",
+        "Compares options on cost, reversibility, operational burden, security/privacy, and team speed.",
+        "Cites source URLs and dates for decision-driving claims."
+      ]
+    },
+    {
+      "id": "weak-evidence-warning",
+      "prompt": "A founder says many teams are switching to Tool X. Should we switch too?",
+      "expectedSkill": "research-brief",
+      "checks": [
+        "Treats the founder quote as testimonial evidence, not proof.",
+        "Looks for adoption evidence and primary documentation.",
+        "Names what evidence would change the recommendation.",
+        "Avoids a confident recommendation when evidence remains weak."
+      ]
+    }
+  ],
+  "traceExpectations": [
+    "Source collection appears before final recommendation.",
+    "Unsupported current facts are not asserted as verified.",
+    "The final artifact includes an evidence table or equivalent structured evidence summary."
+  ]
+}

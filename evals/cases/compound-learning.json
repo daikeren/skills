@@ -1,0 +1,29 @@
+{
+  "skill": "compound-learning",
+  "version": 1,
+  "purpose": "Check that completed work produces reusable, non-secret lessons.",
+  "positivePrompts": [
+    "Capture the reusable lesson from this completed implementation.",
+    "Use compound-learning to turn this review finding into a future workflow note."
+  ],
+  "negativePrompts": [
+    "Implement the fix now.",
+    "Research the latest API docs."
+  ],
+  "cases": [
+    {
+      "id": "validated-solution-note",
+      "prompt": "A debugging session found the reliable command and pitfall for future runs.",
+      "expectedSkill": "compound-learning",
+      "checks": [
+        "Captures only validated learning.",
+        "Separates public generic notes from personal profile defaults.",
+        "Includes lesson, applies when, evidence, practice, pitfalls, and candidate home."
+      ]
+    }
+  ],
+  "traceExpectations": [
+    "Secrets and project-specific private context are not copied into public notes.",
+    "Skill or reference updates trigger validation."
+  ]
+}

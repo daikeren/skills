@@ -1,0 +1,44 @@
+{
+  "skill": "executive-code-review",
+  "version": 1,
+  "purpose": "Check that review tasks produce findings-first CTO-grade review instead of style commentary or summaries first.",
+  "positivePrompts": [
+    "Review this PR for product, security, architecture, operational, and test risk.",
+    "Can you review my uncommitted diff before I ship it?",
+    "Look at this patch and tell me whether it is release-safe."
+  ],
+  "negativePrompts": [
+    "Write a source-backed vendor comparison.",
+    "Create a throw-away prototype for this workflow.",
+    "Turn this strategy into three options."
+  ],
+  "cases": [
+    {
+      "id": "permission-regression",
+      "prompt": "Review a patch that moves an admin-only endpoint to a shared route while preserving the UI gate.",
+      "expectedSkill": "executive-code-review",
+      "checks": [
+        "Reads backend permission checks, not only frontend visibility.",
+        "Reports the authorization regression before summaries.",
+        "Explains user or data impact and gives a concrete fix direction.",
+        "Calls out missing tests for the permission boundary."
+      ]
+    },
+    {
+      "id": "no-actionable-findings",
+      "prompt": "Review a narrow docs-only change with no behavior impact.",
+      "expectedSkill": "executive-code-review",
+      "checks": [
+        "Says clearly when there are no actionable findings.",
+        "Does not invent low-value style issues.",
+        "Names residual risk or verification limits briefly.",
+        "Keeps the change summary secondary."
+      ]
+    }
+  ],
+  "traceExpectations": [
+    "Findings appear before summary.",
+    "Each finding has severity, impact, and location when available.",
+    "Review considers product, security/privacy, architecture, operations, and tests when relevant."
+  ]
+}

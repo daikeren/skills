@@ -1,0 +1,39 @@
+{
+  "name": "cto-agent-skills",
+  "version": "0.1.0",
+  "description": "CTO-grade agent skills for product, architecture, security, operations, and delivery judgment.",
+  "author": {
+    "name": "Andy Dai"
+  },
+  "homepage": "https://github.com/daikeren/cto-agent-skills",
+  "repository": "https://github.com/daikeren/cto-agent-skills",
+  "license": "MIT",
+  "keywords": [
+    "agent-skills",
+    "cto",
+    "architecture",
+    "security",
+    "product",
+    "code-review"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "CTO Agent Skills",
+    "shortDescription": "CTO-grade skills for product, architecture, security, and delivery judgment.",
+    "longDescription": "A public, tool-agnostic pack of agent skills that helps coding agents reason like CTO-grade operators while still shipping small, verified changes.",
+    "developerName": "Andy Dai",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/daikeren/cto-agent-skills",
+    "defaultPrompt": [
+      "Frame this ambiguous engineering decision",
+      "Review this diff like a CTO",
+      "Break this spec into releasable slices"
+    ],
+    "brandColor": "#2563EB"
+  }
+}

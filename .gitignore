@@ -1,0 +1,8 @@
+node_modules/
+.DS_Store
+*.log
+coverage/
+dist/
+tmp/
+evals/results/*.json
+!evals/results/.gitkeep

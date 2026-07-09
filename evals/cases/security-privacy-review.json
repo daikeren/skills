@@ -1,0 +1,29 @@
+{
+  "skill": "security-privacy-review",
+  "version": 1,
+  "purpose": "Check that security reviews inspect trust boundaries and backend enforcement.",
+  "positivePrompts": [
+    "Do a security-privacy-review of this admin API change.",
+    "Review permissions, sensitive data, webhooks, billing abuse, and data minimization."
+  ],
+  "negativePrompts": [
+    "Create a product spec.",
+    "Make a throw-away UI prototype."
+  ],
+  "cases": [
+    {
+      "id": "admin-api-boundary",
+      "prompt": "A patch hides admin controls in the UI but moves the endpoint to a shared route.",
+      "expectedSkill": "security-privacy-review",
+      "checks": [
+        "Checks backend authorization, not only frontend visibility.",
+        "Defines assets, actors, trust boundaries, and sensitive data.",
+        "Recommends tests or controls for the permission boundary."
+      ]
+    }
+  ],
+  "traceExpectations": [
+    "Data minimization is considered for sensitive flows.",
+    "New regression is distinguished from existing policy."
+  ]
+}

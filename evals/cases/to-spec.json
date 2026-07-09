@@ -1,0 +1,29 @@
+{
+  "skill": "to-spec",
+  "version": 1,
+  "purpose": "Check that plans become lightweight implementation specs without PRD bloat.",
+  "positivePrompts": [
+    "Turn this conversation into a lightweight spec.",
+    "Write a to-spec artifact for this agreed product direction."
+  ],
+  "negativePrompts": [
+    "Review this diff for operational risk.",
+    "Research the latest vendor pricing."
+  ],
+  "cases": [
+    {
+      "id": "prototype-to-spec",
+      "prompt": "A prototype proved the state machine; now create a production spec.",
+      "expectedSkill": "to-spec",
+      "checks": [
+        "Includes problem, goals, non-goals, constraints, UX/API contract, rollout, validation, and open questions.",
+        "Includes only decision-rich prototype output, not throw-away demo code.",
+        "Avoids brittle file-by-file planning."
+      ]
+    }
+  ],
+  "traceExpectations": [
+    "Repo/context reading precedes spec decisions when local code matters.",
+    "Open questions are limited to scope-changing unknowns."
+  ]
+}

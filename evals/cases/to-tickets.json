@@ -1,0 +1,29 @@
+{
+  "skill": "to-tickets",
+  "version": 1,
+  "purpose": "Check that specs become independently mergeable and releasable tickets.",
+  "positivePrompts": [
+    "Break this spec into releasable tickets.",
+    "Create to-tickets slices with blockers, rollout, flags, and cleanup follow-ups."
+  ],
+  "negativePrompts": [
+    "Frame the ambiguous problem first.",
+    "Run a disposable prototype."
+  ],
+  "cases": [
+    {
+      "id": "migration-slicing",
+      "prompt": "Plan tickets for a schema migration that must preserve compatibility.",
+      "expectedSkill": "to-tickets",
+      "checks": [
+        "Uses expand-contract sequencing.",
+        "Each ticket has blockers, acceptance criteria, verification, rollout notes, and rollback risk.",
+        "Orders by release safety rather than by architecture layers."
+      ]
+    }
+  ],
+  "traceExpectations": [
+    "Tickets are independently reviewable and mergeable where possible.",
+    "Cleanup follows compatibility and rollout."
+  ]
+}

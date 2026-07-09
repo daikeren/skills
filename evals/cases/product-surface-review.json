@@ -1,0 +1,29 @@
+{
+  "skill": "product-surface-review",
+  "version": 1,
+  "purpose": "Check that product reviews focus on workflow, clarity, states, accessibility, and trust.",
+  "positivePrompts": [
+    "Review this product surface before release.",
+    "Audit the onboarding workflow for clarity, accessibility, trust, and support burden."
+  ],
+  "negativePrompts": [
+    "Review backend authorization only.",
+    "Turn this strategy into options."
+  ],
+  "cases": [
+    {
+      "id": "billing-settings-flow",
+      "prompt": "Review a billing settings flow with admin-only actions and empty states.",
+      "expectedSkill": "product-surface-review",
+      "checks": [
+        "Walks entry point, happy path, edge states, errors, permissions, and recovery.",
+        "Separates user-impact findings from taste.",
+        "Calls out trust and support burden."
+      ]
+    }
+  ],
+  "traceExpectations": [
+    "Findings include severity, surface, evidence, and recommendation.",
+    "Accessibility and trust are checked when relevant."
+  ]
+}

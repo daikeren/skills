@@ -1,0 +1,29 @@
+{
+  "skill": "cto-intake",
+  "version": 1,
+  "purpose": "Check that ambiguous consequential work is framed before execution.",
+  "positivePrompts": [
+    "We need to rethink this product architecture before committing engineering time.",
+    "This request is ambiguous but high impact. Help me frame the CTO intake first."
+  ],
+  "negativePrompts": [
+    "Review this small typo fix.",
+    "Run a disposable parser prototype."
+  ],
+  "cases": [
+    {
+      "id": "ambiguous-platform-decision",
+      "prompt": "We might replace our billing integration and need to decide how to proceed.",
+      "expectedSkill": "cto-intake",
+      "checks": [
+        "Identifies product goal, user impact, technical context, constraints, risks, stakeholders, and decision horizon.",
+        "Asks only blocking questions or states safe assumptions.",
+        "Converts intake into a next useful action."
+      ]
+    }
+  ],
+  "traceExpectations": [
+    "Read-only context gathering precedes recommendations.",
+    "Risks include product, architecture, security/privacy, operations, cost, and team speed."
+  ]
+}

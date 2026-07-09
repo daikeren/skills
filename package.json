@@ -1,0 +1,48 @@
+{
+  "name": "cto-agent-skills",
+  "version": "0.1.0",
+  "private": false,
+  "description": "CTO-grade agent skills for product, architecture, security, operations, and delivery judgment.",
+  "license": "MIT",
+  "type": "commonjs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/daikeren/cto-agent-skills.git"
+  },
+  "keywords": [
+    "agent-skills",
+    "codex",
+    "claude-code",
+    "opencode",
+    "pi",
+    "software-engineering",
+    "cto"
+  ],
+  "scripts": {
+    "validate": "node scripts/validate-skills.js && node scripts/validate-commands.js",
+    "sync-commands": "node scripts/sync-commands.js",
+    "eval": "node scripts/run-evals.js",
+    "eval:live": "node scripts/run-live-evals.js",
+    "extract:codex": "node scripts/extract-codex-workflows.js",
+    "link": "node scripts/link-skills.js",
+    "profile:install": "node scripts/install-profile.js",
+    "release:prepare": "node scripts/release.js"
+  },
+  "files": [
+    "README.md",
+    "CHANGELOG.md",
+    "skills/",
+    "commands/",
+    "references/",
+    "profiles/",
+    "evals/cases/",
+    "evals/fixtures/",
+    "evals/results/.gitkeep",
+    "scripts/",
+    ".codex-plugin/",
+    ".claude-plugin/",
+    ".claude/",
+    ".opencode/",
+    ".pi/"
+  ]
+}

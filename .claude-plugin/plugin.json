@@ -1,0 +1,11 @@
+{
+  "name": "cto-agent-skills",
+  "description": "CTO-grade skills for product, architecture, security, operations, and delivery judgment.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Andy Dai"
+  },
+  "homepage": "https://github.com/daikeren/cto-agent-skills",
+  "repository": "https://github.com/daikeren/cto-agent-skills",
+  "license": "MIT"
+}

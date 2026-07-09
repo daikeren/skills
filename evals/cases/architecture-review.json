@@ -1,0 +1,29 @@
+{
+  "skill": "architecture-review",
+  "version": 1,
+  "purpose": "Check that architecture reviews map current state before recommendations.",
+  "positivePrompts": [
+    "Review this architecture and migration plan.",
+    "Create an architecture-review report with Mermaid diagrams for this service split."
+  ],
+  "negativePrompts": [
+    "Review only the UI empty state copy.",
+    "Capture lessons from this completed bug fix."
+  ],
+  "cases": [
+    {
+      "id": "service-boundary-review",
+      "prompt": "Evaluate whether we should split this module into a service.",
+      "expectedSkill": "architecture-review",
+      "checks": [
+        "Maps current architecture, data flow, dependencies, trust boundaries, and ownership.",
+        "Evaluates product fit, reliability, operations, security/privacy, cost, and team capacity.",
+        "Provides migration phases with validation and rollback."
+      ]
+    }
+  ],
+  "traceExpectations": [
+    "Current-state mapping appears before target-state recommendation.",
+    "Mermaid or HTML report appears when requested."
+  ]
+}

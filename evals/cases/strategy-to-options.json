@@ -1,0 +1,29 @@
+{
+  "skill": "strategy-to-options",
+  "version": 1,
+  "purpose": "Check that strategy prompts become real options with tradeoffs.",
+  "positivePrompts": [
+    "Should we build, buy, or defer this platform capability?",
+    "Turn this strategy into options with cost, risk, reversibility, and speed."
+  ],
+  "negativePrompts": [
+    "Create a source-backed vendor research brief.",
+    "Break this already approved spec into tickets."
+  ],
+  "cases": [
+    {
+      "id": "build-buy-defer",
+      "prompt": "We need a recommendation for a new analytics layer.",
+      "expectedSkill": "strategy-to-options",
+      "checks": [
+        "Produces 2-4 real options, including defer or no-build when plausible.",
+        "Scores options across user impact, architecture, security/privacy, operations, cost, speed, and reversibility.",
+        "Names when each option should be chosen."
+      ]
+    }
+  ],
+  "traceExpectations": [
+    "The recommendation follows option comparison.",
+    "Uncertainty and evidence gaps are explicit."
+  ]
+}

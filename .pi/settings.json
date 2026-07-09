@@ -1,0 +1,6 @@
+{
+  "skills": [
+    "../skills"
+  ],
+  "enableSkillCommands": true
+}

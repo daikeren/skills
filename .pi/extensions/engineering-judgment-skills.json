@@ -1,5 +1,5 @@
 {
-  "name": "cto-agent-skills",
+  "name": "engineering-judgment-skills",
   "description": "Agent skills for product, architecture, security, operations, and delivery judgment.",
   "skills": [
     "../../skills"

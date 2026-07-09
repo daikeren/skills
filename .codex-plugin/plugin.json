@@ -1,12 +1,12 @@
 {
-  "name": "cto-agent-skills",
+  "name": "engineering-judgment-skills",
   "version": "0.1.0",
   "description": "Agent skills for product, architecture, security, operations, and delivery judgment.",
   "author": {
     "name": "Andy Dai"
   },
-  "homepage": "https://github.com/daikeren/cto-agent-skills",
-  "repository": "https://github.com/daikeren/cto-agent-skills",
+  "homepage": "https://github.com/daikeren/skills",
+  "repository": "https://github.com/daikeren/skills",
   "license": "MIT",
   "keywords": [
     "agent-skills",
@@ -28,7 +28,7 @@
       "Read",
       "Write"
     ],
-    "websiteURL": "https://github.com/daikeren/cto-agent-skills",
+    "websiteURL": "https://github.com/daikeren/skills",
     "defaultPrompt": [
       "Frame this ambiguous engineering decision",
       "Review this diff for release risk",

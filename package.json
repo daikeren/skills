@@ -1,5 +1,5 @@
 {
-  "name": "cto-agent-skills",
+  "name": "engineering-judgment-skills",
   "version": "0.1.0",
   "private": false,
   "description": "Agent skills for product, architecture, security, operations, and delivery judgment.",
@@ -7,7 +7,7 @@
   "type": "commonjs",
   "repository": {
     "type": "git",
-    "url": "https://github.com/daikeren/cto-agent-skills.git"
+    "url": "https://github.com/daikeren/skills.git"
   },
   "keywords": [
     "agent-skills",

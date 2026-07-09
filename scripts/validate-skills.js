@@ -319,7 +319,7 @@ function validateSkillDirectory(dirent) {
 
 function validateReferences() {
   const required = [
-    "references/cto-decision-rubric.md",
+    "references/decision-rubric.md",
     "references/evidence-rubric.md",
     "references/product-architecture-security-rubric.md",
     "references/implementation-rubric.md",
@@ -390,8 +390,8 @@ function validateEvalFixtureList(rel, item) {
 
 function validatePackageAndManifests() {
   const packageJson = validateJsonFile("package.json", ["name", "version", "description"]);
-  if (packageJson && packageJson.name !== "cto-agent-skills") {
-    fail("package.json: expected name cto-agent-skills");
+  if (packageJson && packageJson.name !== "engineering-judgment-skills") {
+    fail("package.json: expected name engineering-judgment-skills");
   }
 
   const codex = validateJsonFile(".codex-plugin/plugin.json", [
@@ -402,7 +402,7 @@ function validatePackageAndManifests() {
     "interface"
   ]);
   if (codex) {
-    if (codex.name !== "cto-agent-skills") {
+    if (codex.name !== "engineering-judgment-skills") {
       fail(".codex-plugin/plugin.json: name must match package name");
     }
     if (codex.skills !== "./skills/") {
@@ -421,7 +421,7 @@ function validatePackageAndManifests() {
     "version",
     "description"
   ]);
-  if (claude && claude.name !== "cto-agent-skills") {
+  if (claude && claude.name !== "engineering-judgment-skills") {
     fail(".claude-plugin/plugin.json: name must match package name");
   }
   if (claude && packageJson && claude.version !== packageJson.version) {
@@ -430,7 +430,7 @@ function validatePackageAndManifests() {
 
   validateJsonFile(".opencode/opencode.json", ["$schema"]);
   validateJsonFile(".pi/settings.json", ["skills"]);
-  validateJsonFile(".pi/extensions/cto-agent-skills.json", ["name", "description", "skills"]);
+  validateJsonFile(".pi/extensions/engineering-judgment-skills.json", ["name", "description", "skills"]);
 }
 
 function validateEvalCases() {

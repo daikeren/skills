@@ -8,7 +8,7 @@ description: Reads and writes reusable engineering lessons before and after impl
 ## Workflow
 
 1. Read before acting when the task resembles prior implementation, review, debugging, incident, research, or workflow-maintenance work. Check repo instructions and setup context for the configured lesson store path.
-2. If no configured store exists, search likely local lesson homes before deciding there is no prior learning: `.agents/lessons/`, `.agents/lessons.md`, `docs/lessons/`, `docs/lessons.md`, `docs/engineering/lessons/`, `docs/agent-lessons.md`, `references/observed-workflows.md`, postmortems, retrospectives, runbooks, and optional profiles for personal preferences.
+2. If no configured store exists, search likely local lesson homes before deciding there is no prior learning: `.agents/lessons/`, `.agents/lessons.md`, `docs/lessons/`, `docs/lessons.md`, `docs/engineering/lessons/`, `docs/agent-lessons.md`, this skill's `references/observed-workflows.md` when maintaining this pack, postmortems, retrospectives, runbooks, and optional profiles for personal preferences.
 3. Query narrowly with task terms, affected files, domains, commands, failure modes, and review lenses. Load only relevant lessons and treat stale lessons as candidates for correction, not unquestioned truth.
 4. Apply lessons as working constraints. If current repo evidence conflicts with a lesson, prefer current evidence, note the conflict, and update or supersede the lesson when the work validates the change.
 5. Capture only validated learning. Do not preserve speculation, transient debugging guesses, secrets, private customer data, or one-off trivia.
@@ -26,7 +26,7 @@ Use this precedence to decide where lessons live:
 2. A `learning store path` or equivalent field from repo setup context.
 3. A repo instruction or contribution doc that names a lessons, workflow, retrospective, or knowledge-capture location.
 4. An existing lesson file or directory in the likely homes listed in the workflow.
-5. For this public skill pack, `references/observed-workflows.md` for generic evidence-backed workflow lessons.
+5. For this public skill pack, this skill's `references/observed-workflows.md` for generic evidence-backed workflow lessons.
 6. If no store exists, return the lesson note with a candidate home and ask before creating a new repository convention.
 
 Prefer one lesson per Markdown file when the repo has a lesson directory. Use an aggregate log when that is the existing convention.

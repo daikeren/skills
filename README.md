@@ -79,9 +79,9 @@ This repo now includes lightweight tool-specific adapters:
 ## Repo Shape
 
 ```text
-skills/                 Agent Skills standard directories
+skills/                 Agent Skills standard directories and skill-local references
 commands/               Generic command wrappers for every skill
-references/             Shared rubrics and workflow notes
+references/             Authoring and maintenance rubrics for this pack
 profiles/generic/       Public default profile
 profiles/andy/          Optional Andy-specific profile
 evals/cases/            Structural, routing, and behavioral eval cases
@@ -94,6 +94,20 @@ scripts/                Zero-dependency validation and eval scripts
 .opencode/              OpenCode config and commands
 .pi/                    Pi settings and extension metadata
 ```
+
+## Reference Material
+
+Runtime-essential guidance belongs in the owning skill directory or directly in
+that skill's `SKILL.md`, so selective single-skill installs stay complete. The
+top-level `references/` directory is authoring and maintenance source material
+for this pack, not a runtime dependency for individual skills.
+
+The current top-level references are generic rubrics used to keep skill wording,
+review severity, implementation discipline, decision quality, and evidence
+standards aligned while maintaining this repository. Skill-specific supporting
+material lives with its skill; for example, `compound-learning` keeps its
+pack-maintenance workflow log in
+`skills/compound-learning/references/observed-workflows.md`.
 
 ## Validation
 
@@ -178,7 +192,7 @@ Review the generated `CHANGELOG.md` entry before publishing.
 ## Design Rules
 
 - Keep each skill small, triggerable, and testable.
-- Put public, generic behavior in `skills/` and `references/`.
+- Put runtime behavior in `skills/`; keep top-level references limited to authoring and maintenance material.
 - Keep personal defaults in optional profiles, not in the public core.
 - Prefer concise `SKILL.md` files with optional references over large instruction dumps.
 - Do not assume a specific repo host, issue tracker, package manager, framework, or CI system.

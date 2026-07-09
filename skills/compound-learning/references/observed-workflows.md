@@ -1,8 +1,9 @@
 # Observed Workflows
 
-This is the public pattern log. `compound-learning` appends validated, reusable
-lessons here when maintaining this skill pack. Keep entries generic, small, and
-evidence-backed; personal preferences belong in profiles, not here.
+This is the `compound-learning` skill-local public pattern log. The skill appends
+validated, reusable lessons here when maintaining this skill pack. Keep entries
+generic, small, and evidence-backed; personal preferences belong in profiles,
+not here.
 
 ## Capture Template
 

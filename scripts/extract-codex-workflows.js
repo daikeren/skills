@@ -46,7 +46,7 @@ function summarizeFile(file) {
       evidence: signals.slice(0, 5).map((signal) => `${signal.line}: ${signal.text}`),
       practice: "",
       pitfalls: "",
-      candidateHome: "references/observed-workflows.md"
+      candidateHome: "skills/compound-learning/references/observed-workflows.md"
     }
   };
 }

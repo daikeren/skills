@@ -324,7 +324,7 @@ function validateReferences() {
     "references/product-architecture-security-rubric.md",
     "references/implementation-rubric.md",
     "references/review-rubric.md",
-    "references/observed-workflows.md"
+    "skills/compound-learning/references/observed-workflows.md"
   ];
 
   for (const rel of required) {

@@ -82,8 +82,6 @@ This repo now includes lightweight tool-specific adapters:
 skills/                 Agent Skills standard directories and skill-local references
 commands/               Generic command wrappers for every skill
 references/             Authoring and maintenance rubrics for this pack
-profiles/generic/       Public default profile
-profiles/andy/          Optional Andy-specific profile
 evals/cases/            Structural, routing, and behavioral eval cases
 evals/fixtures/         Throwaway fixtures for behavioral evals
 evals/results/          Generated eval summaries
@@ -174,13 +172,6 @@ npm run link -- --agent codex
 npm run link -- --dry-run
 ```
 
-Install an optional profile into a chosen user-memory file:
-
-```bash
-npm run profile:install -- --profile andy --print
-npm run profile:install -- --profile andy --target ~/.claude/CLAUDE.md
-```
-
 Prepare a version bump across package and plugin manifests:
 
 ```bash
@@ -193,7 +184,7 @@ Review the generated `CHANGELOG.md` entry before publishing.
 
 - Keep each skill small, triggerable, and testable.
 - Put runtime behavior in `skills/`; keep top-level references limited to authoring and maintenance material.
-- Keep personal defaults in optional profiles, not in the public core.
+- Keep personal defaults out of the public core.
 - Prefer concise `SKILL.md` files with optional references over large instruction dumps.
 - Do not assume a specific repo host, issue tracker, package manager, framework, or CI system.
 - Preserve user work and verify the smallest meaningful surface.

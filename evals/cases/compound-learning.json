@@ -17,7 +17,7 @@
       "expectedSkill": "compound-learning",
       "checks": [
         "Captures only validated learning.",
-        "Separates public generic notes from personal profile defaults.",
+        "Separates public generic notes from personal preferences.",
         "Includes lesson, applies when, evidence, practice, pitfalls, and candidate home."
       ]
     }

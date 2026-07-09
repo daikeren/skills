@@ -8,11 +8,11 @@ description: Reads and writes reusable engineering lessons before and after impl
 ## Workflow
 
 1. Read before acting when the task resembles prior implementation, review, debugging, incident, research, or workflow-maintenance work. Check repo instructions and setup context for the configured lesson store path.
-2. If no configured store exists, search likely local lesson homes before deciding there is no prior learning: `.agents/lessons/`, `.agents/lessons.md`, `docs/lessons/`, `docs/lessons.md`, `docs/engineering/lessons/`, `docs/agent-lessons.md`, this skill's `references/observed-workflows.md` when maintaining this pack, postmortems, retrospectives, runbooks, and optional profiles for personal preferences.
+2. If no configured store exists, search likely local lesson homes before deciding there is no prior learning: `.agents/lessons/`, `.agents/lessons.md`, `docs/lessons/`, `docs/lessons.md`, `docs/engineering/lessons/`, `docs/agent-lessons.md`, this skill's `references/observed-workflows.md` when maintaining this pack, postmortems, retrospectives, and runbooks.
 3. Query narrowly with task terms, affected files, domains, commands, failure modes, and review lenses. Load only relevant lessons and treat stale lessons as candidates for correction, not unquestioned truth.
 4. Apply lessons as working constraints. If current repo evidence conflicts with a lesson, prefer current evidence, note the conflict, and update or supersede the lesson when the work validates the change.
 5. Capture only validated learning. Do not preserve speculation, transient debugging guesses, secrets, private customer data, or one-off trivia.
-6. Separate reusable lessons from personal defaults. Put generic lessons in shared docs or references, repo-specific lessons in the configured repo store, and personal workflow preferences in user-level instructions or a personal profile.
+6. Separate reusable lessons from personal defaults. Put generic lessons in shared docs or references, repo-specific lessons in the configured repo store, and personal workflow preferences in user-level instructions.
 7. Record the trigger, context, decision, commands, pitfalls, verification evidence, and reuse criteria.
 8. Prefer small notes that future agents can scan quickly. Link to source files, commits, tickets, PRs, incidents, or command output when available instead of copying large context.
 9. When a lesson changes how a shared skill, checklist, or reference should behave, update that artifact and run whatever checks the project provides.
@@ -64,7 +64,7 @@ When capturing learning, return a reusable note with:
 - Evidence: what proved it.
 - Practice: what to do next time.
 - Pitfalls: what not to repeat.
-- Candidate home: skill, reference, profile, docs, or external tracker.
+- Candidate home: skill, reference, docs, or external tracker.
 - Store action: read, appended, created, updated, superseded, or skipped.
 
 Example note:
@@ -95,6 +95,6 @@ Keep project-specific policy, credentials, private operating details, and person
 - Relevant lesson stores were searched before acting when prior learning could matter.
 - The lesson is validated by a completed implementation, review, incident, or research artifact.
 - Public notes exclude secrets, private customer data, and project-specific policy unless explicitly intended.
-- Personal preferences stay in optional profiles.
+- Personal preferences stay out of public shared skills.
 - The note includes searchable metadata or equivalent bullets, trigger, evidence, practice, pitfalls, candidate home, and store action.
 - Skill or reference changes are followed by the project's checks when they exist.

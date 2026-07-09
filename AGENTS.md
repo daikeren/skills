@@ -8,7 +8,7 @@ This repository contains public, installable Agent Skills.
 - Keep the public core generic. Do not assume any specific repository host, issue tracker, package manager, framework, CI, or monorepo layout.
 - Keep skills small, triggerable, and testable.
 - Do not add per-skill README files. Use concise `SKILL.md` files plus optional shared references.
-- Put personal preferences in `profiles/`, not in public skills.
+- Keep personal preferences out of public skills.
 - Preserve user work and avoid unrelated cleanup.
 
 ## Validation

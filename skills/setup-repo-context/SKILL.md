@@ -24,7 +24,7 @@ Look for these sources before writing anything:
 - Development docs: `CONTRIBUTING*`, `README*`, `docs/`, `dev/`, `handbook/`, `architecture/`, `decisions/`, and release or runbook files.
 - Tooling evidence: package manifests, lockfiles, Makefiles, task runners, test configs, lint configs, formatter configs, editor configs, and CI or automation config.
 - Work artifacts: specs, tickets, decision records, planning docs, issue templates, PR templates, changelogs, and generated reports.
-- Learning artifacts: lesson stores, workflow logs, postmortems, retrospectives, review rubrics, and local profile guidance.
+- Learning artifacts: lesson stores, workflow logs, postmortems, retrospectives, review rubrics, and local preference guidance.
 
 ## Repo Context Shape
 

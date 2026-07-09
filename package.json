@@ -25,7 +25,6 @@
     "eval:live": "node scripts/run-live-evals.js",
     "extract:codex": "node scripts/extract-codex-workflows.js",
     "link": "node scripts/link-skills.js",
-    "profile:install": "node scripts/install-profile.js",
     "release:prepare": "node scripts/release.js"
   },
   "files": [
@@ -34,7 +33,6 @@
     "skills/",
     "commands/",
     "references/",
-    "profiles/",
     "evals/cases/",
     "evals/fixtures/",
     "evals/results/.gitkeep",

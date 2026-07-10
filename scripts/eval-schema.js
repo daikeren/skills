@@ -40,8 +40,34 @@ function validateEvalData(data) {
   }
 
   validateStringArray(errors, data.positivePrompts, "positivePrompts", 2);
-  validateStringArray(errors, data.negativePrompts, "negativePrompts", 2);
+  validateStringArray(errors, data.negativePrompts, "negativePrompts", 0);
   validateStringArray(errors, data.traceExpectations, "traceExpectations", 1);
+
+  const negativeRoutes = data.negativeRoutes === undefined ? [] : data.negativeRoutes;
+  if (!Array.isArray(negativeRoutes)) {
+    errors.push("negativeRoutes must be an array");
+  } else {
+    negativeRoutes.forEach((route, index) => {
+      const prefix = `negativeRoutes[${index}]`;
+      if (!isObject(route)) {
+        errors.push(`${prefix} must be an object`);
+        return;
+      }
+      if (!isNonEmptyString(route.prompt)) {
+        errors.push(`${prefix}.prompt must be a non-empty string`);
+      }
+      if (!isNonEmptyString(route.expectedSkill)) {
+        errors.push(`${prefix}.expectedSkill must be a non-empty string`);
+      } else if (isNonEmptyString(data.skill) && route.expectedSkill === data.skill) {
+        errors.push(`${prefix}.expectedSkill must differ from the top-level skill`);
+      }
+    });
+  }
+  const negativePromptCount = (Array.isArray(data.negativePrompts) ? data.negativePrompts.length : 0)
+    + (Array.isArray(negativeRoutes) ? negativeRoutes.length : 0);
+  if (negativePromptCount < 2) {
+    errors.push("negativePrompts and negativeRoutes must contain at least two prompts in total");
+  }
 
   if (data.fixtures !== undefined) {
     errors.push("fixtures must be declared per case, not at the file top level");
@@ -86,7 +112,49 @@ function validateEvalData(data) {
   return errors;
 }
 
+function validateEvalCoverage(skillNames, datasets) {
+  const errors = [];
+  const expected = new Set(skillNames);
+  if (expected.size === 0) {
+    return ["no skills found for eval coverage"];
+  }
+  if (datasets.length === 0) {
+    return [`expected one eval dataset for each of ${expected.size} skill(s); found none`];
+  }
+
+  const bySkill = new Map();
+  datasets.forEach((dataset, index) => {
+    const label = dataset.file || `dataset[${index}]`;
+    if (!isNonEmptyString(dataset.skill)) {
+      errors.push(`${label}: dataset skill must be a non-empty string`);
+      return;
+    }
+    if (!expected.has(dataset.skill)) {
+      errors.push(`${label}: skill ${dataset.skill} has no matching skill directory`);
+    }
+    for (const boundarySkill of dataset.expectedSkills || []) {
+      if (!expected.has(boundarySkill)) {
+        errors.push(`${label}: boundary target ${boundarySkill} has no matching skill directory`);
+      }
+    }
+    const labels = bySkill.get(dataset.skill) || [];
+    labels.push(label);
+    bySkill.set(dataset.skill, labels);
+  });
+
+  for (const skill of expected) {
+    const labels = bySkill.get(skill) || [];
+    if (labels.length === 0) {
+      errors.push(`skill ${skill} is missing an eval dataset`);
+    } else if (labels.length > 1) {
+      errors.push(`skill ${skill} has duplicate eval datasets: ${labels.join(", ")}`);
+    }
+  }
+  return errors;
+}
+
 module.exports = {
   isNonEmptyString,
+  validateEvalCoverage,
   validateEvalData
 };

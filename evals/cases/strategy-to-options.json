@@ -3,19 +3,27 @@
   "version": 1,
   "purpose": "Check that strategy prompts become real options with tradeoffs.",
   "positivePrompts": [
-    "Should we build, buy, or defer this platform capability?",
-    "Turn this strategy into options with cost, risk, reversibility, and speed."
+    "Using the completed vendor research, should we build, buy, or defer this platform capability?",
+    "The evidence is sufficient; turn this framed strategy into options with cost, risk, reversibility, and speed."
   ],
-  "negativePrompts": [
-    "Create a source-backed vendor research brief.",
-    "Break this already approved spec into tickets."
+  "negativePrompts": [],
+  "negativeRoutes": [
+    {
+      "prompt": "Current vendor pricing, security posture, and compatibility are still unknown; research and cite them first.",
+      "expectedSkill": "research-brief"
+    },
+    {
+      "prompt": "The goals and stakeholders are still unclear; scope the problem before generating options.",
+      "expectedSkill": "scope-work"
+    }
   ],
   "cases": [
     {
       "id": "build-buy-defer",
-      "prompt": "We need a recommendation for a new analytics layer.",
+      "prompt": "The research brief is complete; choose among build, buy, and defer paths for a new analytics layer.",
       "expectedSkill": "strategy-to-options",
       "checks": [
+        "Uses the completed evidence as decision input instead of reopening broad research.",
         "Pressure-tests assumptions or edge cases that could change the recommendation.",
         "Produces 2-4 real options, including defer or no-build when plausible.",
         "Scores options across user impact, architecture, security/privacy, operations, cost, speed, and reversibility.",
@@ -24,6 +32,7 @@
     }
   ],
   "traceExpectations": [
+    "Decision options are generated only after the evidence is sufficient.",
     "Fuzzy terms, contradictions, and tradeoffs are tested before recommendation.",
     "The recommendation follows option comparison.",
     "Uncertainty and evidence gaps are explicit."

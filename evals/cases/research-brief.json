@@ -5,12 +5,17 @@
   "positivePrompts": [
     "Compare current pricing and security posture for three managed Postgres vendors for a B2B SaaS launch.",
     "Should we adopt this new browser API now or wait? I need a source-backed brief.",
-    "Research whether the latest OpenCode skill support is compatible with our portable SKILL.md repo."
+    "Produce a source-backed brief on current OpenCode compatibility with our portable SKILL.md repository."
   ],
   "negativePrompts": [
     "Implement the button component from the local design file.",
-    "Review this diff for missing tests.",
     "Create a throw-away script to see whether this parser works."
+  ],
+  "negativeRoutes": [
+    {
+      "prompt": "The vendor evidence is settled; compare build, buy, and defer paths by risk, cost, and reversibility.",
+      "expectedSkill": "strategy-to-options"
+    }
   ],
   "cases": [
     {
@@ -18,11 +23,13 @@
       "prompt": "We need to choose a vendor where pricing, security posture, and feature set may have changed recently.",
       "expectedSkill": "research-brief",
       "checks": [
+        "Treats current verified evidence as the primary deliverable before forming options.",
         "Defines the decision and required confidence before recommending.",
         "Uses current primary sources or states that source access is unavailable.",
-        "Separates facts, signals, testimonials, adoption evidence, risks, and recommendations.",
-        "Compares options on cost, reversibility, operational burden, security/privacy, and team speed.",
-        "Cites source URLs and dates for decision-driving claims."
+        "Separates facts, signals, testimonials, adoption evidence, risks, and recommendations made by sources.",
+        "Compares alternatives on cost, reversibility, operational burden, security/privacy, and team speed without decision-option scoring.",
+        "Cites source URLs and dates for decision-driving claims.",
+        "States whether the evidence is sufficient to hand off to strategy-to-options."
       ]
     },
     {
@@ -38,8 +45,10 @@
     }
   ],
   "traceExpectations": [
-    "Source collection appears before final recommendation.",
+    "The brief distinguishes evidence gathering from the downstream strategy choice.",
+    "Source collection appears before the evidence conclusion or any provisional recommendation.",
     "Unsupported current facts are not asserted as verified.",
-    "The final artifact includes an evidence table or equivalent structured evidence summary."
+    "The final artifact includes an evidence table or equivalent structured evidence summary.",
+    "Decision-ready option scoring is left to strategy-to-options."
   ]
 }

@@ -3,19 +3,30 @@
   "version": 1,
   "purpose": "Check that plans become lightweight implementation specs without PRD bloat.",
   "positivePrompts": [
-    "Turn this conversation into a lightweight spec.",
-    "Write a to-spec artifact for this agreed product direction."
+    "The team chose option B; write the implementation spec with goals, non-goals, UX/API contracts, rollout, and validation.",
+    "Write a to-spec artifact for this agreed product direction, including contracts, rollout, and validation."
   ],
-  "negativePrompts": [
-    "Review this diff for operational risk.",
-    "Research the latest vendor pricing."
+  "negativePrompts": [],
+  "negativeRoutes": [
+    {
+      "prompt": "The request is ambiguous and consequential; clarify the problem, affected users, and success signal before choosing any direction.",
+      "expectedSkill": "scope-work"
+    },
+    {
+      "prompt": "The decision is framed but not chosen; compare build, buy, and defer options first.",
+      "expectedSkill": "strategy-to-options"
+    }
   ],
   "cases": [
     {
       "id": "prototype-to-spec",
       "prompt": "A prototype proved the state machine; now create a production spec.",
       "expectedSkill": "to-spec",
+      "fixtures": [
+        "prototype-state-machine.md"
+      ],
       "checks": [
+        "Names the chosen direction and cites the provided prototype evidence without inventing additional proof.",
         "Includes problem, goals, non-goals, constraints, UX/API contract, rollout, validation, and open questions.",
         "Pressure-tests fuzzy terms, edge cases, contradictions, and assumptions before freezing the spec.",
         "Uses existing repo vocabulary or ADRs when local context provides them.",
@@ -26,10 +37,11 @@
     }
   ],
   "traceExpectations": [
+    "A chosen direction is confirmed before the final spec is written.",
     "Spec synthesizes existing context before asking new questions.",
     "Pressure-testing stays bounded to scope-changing questions or assumptions.",
     "Repo/context reading precedes spec decisions when local code matters.",
     "Validation names behavior seams rather than implementation details.",
-    "Open questions are limited to scope-changing unknowns."
+    "Open questions stay within the chosen direction and bounded scope."
   ]
 }

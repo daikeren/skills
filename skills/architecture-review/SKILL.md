@@ -13,7 +13,7 @@ description: Reviews designs, docs, code, dependencies, data models, scaling pat
 4. Evaluate fitness against product goals, expected scale, failure modes, operational burden, security/privacy, cost, and team capacity.
 5. Distinguish current defects or regressions from optional future improvements and missing validation. Prefer fewer, higher-leverage recommendations.
 6. If useful for stakeholders, draw Mermaid diagrams for current/proposed architecture, data flow, sequence, boundaries, risk hotspots, and migration phases. Produce an HTML report file only when the user asks for one, and note that Mermaid blocks need a renderer to display.
-7. Recommend migration in reversible phases with validation checkpoints and rollback paths.
+7. Recommend a target shape or migration only when the user asks for a proposed direction or a validated finding requires structural change. When migration is warranted, make it reversible with validation checkpoints and rollback paths; otherwise stop at current-state findings and residual risk.
 
 ## Output
 
@@ -22,10 +22,14 @@ Return:
 - Executive summary: decision, confidence, and top risks.
 - Current architecture: concise map of what exists.
 - Findings: severity, confidence, type, evidence, impact, and smallest credible fix direction.
+- Open questions: only items that change the decision.
+
+Include diagrams when useful or requested: Mermaid blocks inline, or an HTML report file when requested.
+
+Return these only when the user requests them or a finding requires structural change:
+
 - Proposed direction: target shape and why it fits.
 - Migration plan: phases, compatibility, rollout, verification, and rollback.
-- Diagrams: Mermaid blocks inline, or an HTML report file when requested.
-- Open questions: only items that change the decision.
 
 Use severity:
 
@@ -56,5 +60,5 @@ Fix: move the queries behind the existing payments client and remove the DB gran
 - Boundaries, data flow, dependencies, trust boundaries, and ownership are mapped.
 - Product value, reliability, security/privacy, cost, operations, and team capacity are evaluated.
 - Findings distinguish current defects from future optional improvements.
-- Migration phases preserve compatibility where needed.
-- Rollback, monitoring, and validation checkpoints are explicit.
+- Proposed direction and migration are omitted when current-state findings do not justify structural change.
+- When migration is warranted, its phases preserve compatibility and include rollback, monitoring, and validation checkpoints.

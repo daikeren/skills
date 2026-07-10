@@ -22,16 +22,20 @@ description: Runs disposable prototype exploration to learn product feel, techni
 
 End with:
 
+- Evidence/Observation: the exact output, screenshot, trace, command result, API response, or user-flow check that supports the learning.
 - Learned: what the prototype proved, disproved, or made visible.
 - Discard: code, assumptions, approaches, or dependencies that should not move forward.
 - Decision point: user choice needed next, or harmless assumption used while unattended.
 - Follow-up: the smallest production-quality next step, including risks and verification needed.
+
+Tie every claim in Learned to the Evidence/Observation. If no concrete observation was produced, say that the prototype is inconclusive rather than claiming it proved or disproved anything.
 
 When the prototype leaves files behind, label them as disposable or explain why they should become part of the next implementation slice.
 
 Example ending:
 
 ```text
+Evidence/Observation: `node spike.js` returned only a final response after 4.2s; no partial callbacks fired.
 Learned: the vendor SDK cannot stream partial results; the UI must poll.
 Discard: the streaming wrapper spike and its mock server.
 Follow-up: spec a polling endpoint with backoff; verify vendor rate limits first.

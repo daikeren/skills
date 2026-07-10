@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const assert = require("assert/strict");
-const { validateEvalData } = require("./eval-schema");
+const { validateEvalCoverage, validateEvalData } = require("./eval-schema");
 
 function validCase() {
   return {
@@ -49,5 +49,28 @@ expectError(emptyPrompt, "positivePrompts[0] must be a non-empty string");
 const duplicateIds = clone(validCase());
 duplicateIds.cases.push(clone(duplicateIds.cases[0]));
 expectError(duplicateIds, "id must be unique");
+
+const pairedRoutes = clone(validCase());
+pairedRoutes.negativePrompts = [];
+pairedRoutes.negativeRoutes = [
+  { prompt: "Use alpha instead.", expectedSkill: "alpha" },
+  { prompt: "Use beta instead.", expectedSkill: "beta" }
+];
+assert.deepEqual(validateEvalData(pairedRoutes), []);
+
+const selfRoute = clone(pairedRoutes);
+selfRoute.negativeRoutes[0].expectedSkill = "example-skill";
+expectError(selfRoute, "expectedSkill must differ");
+
+const coverage = [
+  { skill: "alpha", file: "evals/cases/alpha.json" },
+  { skill: "beta", file: "evals/cases/beta.json" }
+];
+assert.deepEqual(validateEvalCoverage(["alpha", "beta"], coverage), []);
+assert.match(validateEvalCoverage(["alpha"], [])[0], /found none/);
+assert.ok(validateEvalCoverage(["alpha", "beta"], coverage.slice(0, 1)).some((error) => error.includes("beta is missing")));
+assert.ok(validateEvalCoverage(["alpha"], [...coverage.slice(0, 1), coverage[0]]).some((error) => error.includes("duplicate")));
+assert.ok(validateEvalCoverage(["alpha"], [{ skill: "unknown", file: "unknown.json" }]).some((error) => error.includes("no matching skill directory")));
+assert.ok(validateEvalCoverage(["alpha"], [{ skill: "alpha", file: "alpha.json", expectedSkills: ["unknown"] }]).some((error) => error.includes("boundary target")));
 
 console.log("Eval schema tests passed.");

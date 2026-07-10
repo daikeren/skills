@@ -3,7 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 const { resolveFixtureFile } = require("./eval-files");
-const { validateEvalData } = require("./eval-schema");
+const { validateEvalCoverage, validateEvalData } = require("./eval-schema");
 
 const root = process.cwd();
 const casesDir = path.join(root, "evals", "cases");
@@ -13,6 +13,7 @@ const skillRoot = path.join(root, "skills");
 const errors = [];
 const summaries = [];
 const routingCollisions = [];
+const boundaryRoutingCollisions = [];
 const routingMarginWarnings = [];
 const negativeRoutingWarnings = [];
 const ROUTING_MARGIN = 0.04;
@@ -100,6 +101,15 @@ function skillDescriptions() {
     })
     .filter(Boolean)
     .sort((a, b) => a.skill.localeCompare(b.skill));
+}
+
+function installedSkillNames() {
+  if (!fs.existsSync(skillRoot)) return [];
+  return fs
+    .readdirSync(skillRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && fs.existsSync(path.join(skillRoot, entry.name, "SKILL.md")))
+    .map((entry) => entry.name)
+    .sort();
 }
 
 function tokenize(text) {
@@ -301,6 +311,31 @@ function collectRoutingSignals(rel, data, routeIndex) {
       });
     }
   }
+
+  for (const route of data.negativeRoutes || []) {
+    const matches = topMatches(route.prompt, routeIndex);
+    const top = matches[0];
+    const runnerUp = matches[1];
+    const narrowMargin = top && runnerUp ? top.score - runnerUp.score < ROUTING_MARGIN : false;
+    if (!top || top.skill !== route.expectedSkill) {
+      boundaryRoutingCollisions.push({
+        file: rel,
+        skill: data.skill,
+        expectedSkill: route.expectedSkill,
+        prompt: route.prompt,
+        reason: !top ? "no route candidates" : "boundary prompt routed to the wrong sibling skill",
+        matches
+      });
+    } else if (narrowMargin) {
+      routingMarginWarnings.push({
+        file: rel,
+        skill: route.expectedSkill,
+        prompt: route.prompt,
+        reason: `boundary match margin below ${ROUTING_MARGIN}`,
+        matches
+      });
+    }
+  }
 }
 
 function validateCaseFile(file, routeIndex) {
@@ -327,6 +362,7 @@ function validateCaseFile(file, routeIndex) {
 
   const positivePrompts = data.positivePrompts;
   const negativePrompts = data.negativePrompts;
+  const negativeRoutes = data.negativeRoutes || [];
   const cases = data.cases;
   const traceExpectations = data.traceExpectations;
   let fixtureReferences = 0;
@@ -351,11 +387,17 @@ function validateCaseFile(file, routeIndex) {
     skill: data.skill,
     positivePrompts: positivePrompts.length,
     negativePrompts: negativePrompts.length,
+    boundaryPrompts: negativeRoutes.length,
     behavioralCases: cases.length,
     traceExpectations: traceExpectations.length,
     fixtureReferences,
     keywordRoutingSignal: positiveScore >= negativeScore ? "pass" : "review"
   });
+  return {
+    skill: data.skill,
+    file: rel,
+    expectedSkills: negativeRoutes.map((route) => route.expectedSkill)
+  };
 }
 
 function formatMatches(matches) {
@@ -384,14 +426,28 @@ function main() {
   if (!fs.existsSync(casesDir)) {
     fail("evals/cases: missing");
   } else {
-    for (const file of fs.readdirSync(casesDir).filter((name) => name.endsWith(".json"))) {
-      validateCaseFile(path.join(casesDir, file), routeIndex);
+    const files = fs.readdirSync(casesDir).filter((name) => name.endsWith(".json"));
+    const datasets = [];
+    for (const file of files) {
+      const dataset = validateCaseFile(path.join(casesDir, file), routeIndex);
+      if (dataset) datasets.push(dataset);
+    }
+    if (datasets.length === files.length) {
+      for (const error of validateEvalCoverage(installedSkillNames(), datasets)) {
+        fail(`evals/cases: ${error}`);
+      }
     }
   }
 
   fs.mkdirSync(resultsDir, { recursive: true });
   if (routingCollisions.length > 0) {
     fail(`routing: ${routingCollisions.length} positive prompt(s) did not route clearly to their expected skill`);
+  }
+  if (negativeRoutingWarnings.length > 0) {
+    fail(`routing: ${negativeRoutingWarnings.length} negative prompt(s) still routed to the skill they should avoid`);
+  }
+  if (boundaryRoutingCollisions.length > 0) {
+    fail(`routing: ${boundaryRoutingCollisions.length} boundary prompt(s) did not route to the expected sibling skill`);
   }
 
   const result = {
@@ -401,9 +457,11 @@ function main() {
     routingCollisionSummary: {
       thresholdMargin: ROUTING_MARGIN,
       positiveCollisionCount: routingCollisions.length,
+      boundaryCollisionCount: boundaryRoutingCollisions.length,
       positiveMarginWarningCount: routingMarginWarnings.length,
       negativeWarningCount: negativeRoutingWarnings.length,
       positiveCollisions: routingCollisions.slice(0, 20),
+      boundaryCollisions: boundaryRoutingCollisions.slice(0, 20),
       positiveMarginWarnings: routingMarginWarnings.slice(0, 20),
       negativeWarnings: negativeRoutingWarnings.slice(0, 20)
     },

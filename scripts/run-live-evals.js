@@ -5,7 +5,7 @@ const os = require("os");
 const path = require("path");
 const { spawnSync } = require("child_process");
 const { DEFAULT_MAX_FIXTURE_BYTES, resolveFixtureFile } = require("./eval-files");
-const { validateEvalData } = require("./eval-schema");
+const { validateEvalCoverage, validateEvalData } = require("./eval-schema");
 
 const root = process.cwd();
 const casesDir = path.join(root, "evals", "cases");
@@ -38,6 +38,16 @@ function readJson(file) {
 
 function readText(file) {
   return fs.readFileSync(file, "utf8");
+}
+
+function installedSkillNames() {
+  const skillRoot = path.join(root, "skills");
+  if (!fs.existsSync(skillRoot)) return [];
+  return fs
+    .readdirSync(skillRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && fs.existsSync(path.join(skillRoot, entry.name, "SKILL.md")))
+    .map((entry) => entry.name)
+    .sort();
 }
 
 function positiveIntegerEnv(name, fallback) {
@@ -551,13 +561,34 @@ function main() {
 
   const datasets = [];
   const schemaErrors = [];
-  for (const file of fs.readdirSync(casesDir).filter((name) => name.endsWith(".json")).sort()) {
-    const data = readJson(path.join(casesDir, file));
-    const errors = validateEvalData(data);
-    for (const error of errors) {
-      schemaErrors.push(`${path.join("evals", "cases", file)}: ${error}`);
+  if (!fs.existsSync(casesDir)) {
+    schemaErrors.push("evals/cases: missing");
+  } else {
+    for (const file of fs.readdirSync(casesDir).filter((name) => name.endsWith(".json")).sort()) {
+      const rel = path.join("evals", "cases", file);
+      let data;
+      try {
+        data = readJson(path.join(casesDir, file));
+      } catch (error) {
+        schemaErrors.push(`${rel}: invalid JSON (${error.message})`);
+        continue;
+      }
+      const errors = validateEvalData(data);
+      for (const error of errors) {
+        schemaErrors.push(`${rel}: ${error}`);
+      }
+      datasets.push({ data, file: rel });
     }
-    datasets.push(data);
+  }
+  if (schemaErrors.length === 0) {
+    const coverageDatasets = datasets.map((dataset) => ({
+      skill: dataset.data.skill,
+      file: dataset.file,
+      expectedSkills: (dataset.data.negativeRoutes || []).map((route) => route.expectedSkill)
+    }));
+    for (const error of validateEvalCoverage(installedSkillNames(), coverageDatasets)) {
+      schemaErrors.push(`evals/cases: ${error}`);
+    }
   }
   if (schemaErrors.length > 0) {
     console.error("Live eval case validation failed:");
@@ -568,7 +599,7 @@ function main() {
   }
 
   const results = [];
-  for (const data of datasets) {
+  for (const { data } of datasets) {
     for (const item of data.cases) {
       results.push(runCase(data, item));
     }

@@ -3,7 +3,7 @@
   "version": 1,
   "purpose": "Check that ambiguous consequential work is framed before execution.",
   "positivePrompts": [
-    "We need to rethink this product architecture before committing engineering time.",
+    "Replacing billing could affect customers and operations, but the outcome is unclear and risky; frame the problem before implementation.",
     "This request is ambiguous but high impact. Help me scope the work first."
   ],
   "negativePrompts": [

@@ -3,7 +3,7 @@
   "version": 1,
   "purpose": "Check that architecture reviews map current state before recommendations.",
   "positivePrompts": [
-    "Review this architecture and migration plan.",
+    "Review the current service boundaries, runtime data flow, and migration risks in this system architecture.",
     "Create an architecture-review report with Mermaid diagrams for this service split."
   ],
   "negativePrompts": [
@@ -18,12 +18,23 @@
       "checks": [
         "Maps current architecture, data flow, dependencies, trust boundaries, and ownership.",
         "Evaluates product fit, reliability, operations, security/privacy, cost, and team capacity.",
-        "Provides migration phases with validation and rollback."
+        "If recommending a split, provides reversible migration phases with validation and rollback; if retaining the module, explains why migration is omitted."
+      ]
+    },
+    {
+      "id": "current-state-health-review",
+      "prompt": "Assess whether the current module boundaries and dependencies are healthy; do not propose a restructure unless a finding requires it.",
+      "expectedSkill": "architecture-review",
+      "checks": [
+        "Maps current state and reports evidence-backed findings.",
+        "Stops at findings and residual risk when structural change is not justified.",
+        "Omits a target shape and migration plan unless a validated finding requires them."
       ]
     }
   ],
   "traceExpectations": [
     "Current-state mapping appears before target-state recommendation.",
+    "Target shape and migration appear only when requested or justified by a finding.",
     "Mermaid or HTML report appears when requested."
   ]
 }

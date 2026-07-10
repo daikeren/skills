@@ -18,12 +18,25 @@
       "checks": [
         "States the prototype question and learning target.",
         "Uses isolated or reversible artifacts.",
-        "Ends with learned, discard, and follow-up sections."
+        "Reports an exact Evidence/Observation before Learned.",
+        "Ends with learned, discard, and follow-up sections.",
+        "Does not claim the prototype proved anything without a concrete observation."
+      ]
+    },
+    {
+      "id": "inconclusive-scratch-demo",
+      "prompt": "A scratch demo exists, but nobody recorded its output; determine what it actually proves before any production work.",
+      "expectedSkill": "prototype",
+      "checks": [
+        "Runs or requests one concrete observation before drawing a conclusion.",
+        "Labels the prototype inconclusive if evidence cannot be produced.",
+        "Does not treat the existence of demo code as proof."
       ]
     }
   ],
   "traceExpectations": [
     "Prototype verification includes a concrete observation.",
+    "Learned claims are tied directly to Evidence/Observation.",
     "Production hardening is explicitly deferred."
   ]
 }

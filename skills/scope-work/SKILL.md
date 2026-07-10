@@ -1,6 +1,6 @@
 ---
 name: scope-work
-description: Scopes ambiguous, high-impact, consequential product or engineering work before implementation, including bounded pressure-testing of fuzzy terms, edge cases, and hidden tradeoffs. Use when a task has unclear goals, cross-functional impact, architecture risk, security or privacy exposure, cost or operational tradeoffs, stakeholder ambiguity, or a decision horizon that affects product direction. Use strategy-to-options instead when the problem is already framed and the user needs concrete options to choose between.
+description: Scopes ambiguous, high-impact, consequential product or engineering work through problem framing before implementation, including bounded pressure-testing of fuzzy terms, edge cases, and hidden tradeoffs. Use when a task has unclear goals, cross-functional impact, architecture risk, security or privacy exposure, cost or operational tradeoffs, stakeholder ambiguity, or a decision horizon that affects product direction. Use strategy-to-options instead when the problem is already framed and the user needs concrete options to choose between.
 ---
 
 # Scope Work

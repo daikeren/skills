@@ -1,6 +1,6 @@
 ---
 name: strategy-to-options
-description: Turns a framed strategic or technical decision into 2-4 decision-ready options with tradeoffs and bounded pressure-testing. Use when the user asks what to do, which path to choose, whether to build or buy, how to sequence a major change, or how to balance speed, risk, cost, reversibility, product impact, and team constraints. Use scope-work first when goals, stakeholders, or constraints are still unframed.
+description: Turns a framed strategic or technical decision with sufficient supporting evidence into 2-4 decision-ready options with tradeoffs and bounded pressure-testing. Use when the primary deliverable is a choice about what to do, which path to take, whether to build, buy, or defer, or how to balance speed, risk, cost, reversibility, product impact, and team constraints. Use scope-work first when goals or constraints are unframed, and research-brief first when current external facts remain decision-critical and unverified.
 ---
 
 # Strategy To Options
@@ -9,7 +9,7 @@ description: Turns a framed strategic or technical decision into 2-4 decision-re
 
 1. Start from the decision, not the first proposed solution. Identify the user outcome, business goal, technical context, constraints, and decision horizon.
 2. Check repo-local context, lessons, glossary, ADRs, or similar stores when previous decisions or vocabulary affect the options.
-3. Gather enough evidence to avoid option theater. If facts are current or external, use `research-brief` or browse before recommending.
+3. Confirm the evidence is sufficient to compare real paths. If current external facts remain decision-critical and unverified, use `research-brief` before generating options rather than inventing assumptions.
 4. Scale depth to risk. Low-risk, solo, reversible decisions can use a short comparison; cross-functional, irreversible, sensitive-data, migration, security, or compliance decisions need deeper evidence and explicit decision criteria.
 5. Run a bounded grilling pass before locking options: challenge fuzzy terms, probe concrete edge cases, check whether code or docs contradict the story, and identify assumptions that would flip the recommendation.
 6. Generate 2-4 real options. Include the conservative default, a faster path, a more durable path, and a no-build or defer option when plausible.

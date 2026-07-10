@@ -3,7 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 const { resolveFixtureFile } = require("./eval-files");
-const { validateEvalData } = require("./eval-schema");
+const { validateEvalCoverage, validateEvalData } = require("./eval-schema");
 
 const root = process.cwd();
 const skillRoot = path.join(root, "skills");
@@ -436,9 +436,8 @@ function validateEvalCases() {
   }
 
   const files = fs.readdirSync(evalRoot).filter((file) => file.endsWith(".json"));
-  if (files.length === 0) {
-    fail("evals/cases: no JSON cases found");
-  }
+  const datasets = [];
+  let allSchemasValid = true;
 
   for (const file of files) {
     const rel = path.join("evals", "cases", file);
@@ -448,6 +447,7 @@ function validateEvalCases() {
       data = JSON.parse(readText(full));
     } catch (error) {
       fail(`${rel}: invalid JSON (${error.message})`);
+      allSchemasValid = false;
       continue;
     }
 
@@ -456,10 +456,25 @@ function validateEvalCases() {
       fail(`${rel}: ${error}`);
     }
     if (schemaErrors.length > 0) {
+      allSchemasValid = false;
       continue;
     }
+    datasets.push({
+      skill: data.skill,
+      file: rel,
+      expectedSkills: (data.negativeRoutes || []).map((route) => route.expectedSkill)
+    });
     for (const item of data.cases) {
       validateEvalFixtureList(rel, item);
+    }
+  }
+
+  if (allSchemasValid) {
+    const skillNames = fs.existsSync(skillRoot)
+      ? fs.readdirSync(skillRoot, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name)
+      : [];
+    for (const error of validateEvalCoverage(skillNames, datasets)) {
+      fail(`evals/cases: ${error}`);
     }
   }
 }

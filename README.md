@@ -116,7 +116,7 @@ npm run validate
 npm run eval
 ```
 
-The validators check skill frontmatter, kebab-case names, description specificity, required body sections, forbidden per-skill READMEs, reference files, manifests, command wrapper parity, and eval case JSON shape. The eval runner performs deterministic sanity checks and writes ignored generated output under `evals/results/`.
+The validators check skill frontmatter, kebab-case names, description specificity, required body sections, forbidden per-skill READMEs, reference files, manifests, command wrapper parity, eval case JSON shape, and one-to-one coverage between skills and eval datasets. The eval runner performs deterministic routing and sanity checks, reports routing warnings in the terminal, and writes ignored generated output under `evals/results/`.
 
 For opt-in behavioral smoke tests against a real agent:
 

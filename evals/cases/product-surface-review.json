@@ -3,7 +3,7 @@
   "version": 1,
   "purpose": "Check that product reviews focus on workflow, clarity, states, accessibility, and trust.",
   "positivePrompts": [
-    "Review this product surface before release.",
+    "Before release, walk through what a new admin sees when billing settings are empty, loading, or fail.",
     "Audit the onboarding workflow for clarity, accessibility, trust, and support burden."
   ],
   "negativePrompts": [

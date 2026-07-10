@@ -7,7 +7,7 @@ description: Routes product and engineering work to the right focused skill. Use
 
 ## Workflow
 
-1. Identify the user's current phase and route to one focused skill.
+1. Identify the user's current phase and route to one focused skill. Unless the user explicitly asks only for routing advice, treat the route as a brief preface and continue into the selected skill in the same response.
 2. If the task is a review, route directly to the right review skill: architecture, product surface, security/privacy, or code review.
 3. Check repo-local context, lessons, glossary, ADRs, or similar stores when routing depends on local decisions or conventions.
 4. Scale depth to risk. Low-risk, solo, reversible work can take the lightest ready path; cross-functional, irreversible, sensitive-data, migration, security, or compliance work needs the standard or deeper path.
@@ -15,18 +15,23 @@ description: Routes product and engineering work to the right focused skill. Use
 6. Prefer the earliest missing readiness gate in the daily flow: scope -> options -> spec -> tickets -> implementation -> review -> compound learning.
 7. If the task needs current external facts, route to `research-brief` before deciding.
 8. If uncertainty can be reduced faster by a disposable proof, route to `prototype`.
-9. State the chosen skill and why, then follow that skill's workflow.
+9. State the chosen skill and why, then apply that skill's workflow. Stop at a handoff only when the user asked for routing alone or the selected skill requires a missing user-owned decision.
 
 ## Output
 
-Return:
+By default, return:
+
+- Route preface: selected skill and a one-sentence reason.
+- Downstream result: the selected skill's normal output.
+
+When the user explicitly asks only for routing, return:
 
 - Route: selected skill.
 - Reason: one sentence.
 - Assumptions: any safe assumption used to route without more user input.
 - Handoff: the immediate instruction to apply that skill.
 
-Example route:
+Example routing-only response:
 
 ```text
 Route: to-tickets

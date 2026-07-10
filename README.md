@@ -125,7 +125,7 @@ LIVE_EVAL_AGENT=codex npm run eval:live
 LIVE_EVAL_AGENT=claude-code npm run eval:live
 ```
 
-The live runner executes the behavioral cases and writes `evals/results/live-latest.json`. Keep it out of the fast CI gate because it depends on local agent installation, credentials, model availability, and cost.
+The live runner executes each candidate case in a disposable copy of the published repository surfaces, runs the judge from a separate empty temporary directory, rejects unsafe fixture paths and symbolic links, and applies per-command timeouts with process-group cleanup. It writes `evals/results/live-latest.json` in the source checkout. Keep it out of the fast CI gate because it depends on local agent installation, credentials, model availability, and cost.
 
 ## Daily Flow
 
@@ -151,7 +151,7 @@ Review-specific shortcuts:
 
 ## Optional Per-Repo Context
 
-`setup-repo-context` helps agents discover and, when requested or locally supported, maintain a compact repo context file. The context should point to existing instructions first and record evidence-backed conventions such as spec and ticket locations, review severity policy, verification commands, tracker/CI/tooling signals, the lesson store path for `compound-learning`, decision records, and AFK handoff expectations.
+`setup-repo-context` helps agents discover repository conventions in read mode and, when the user or a repo instruction explicitly authorizes maintenance, update a compact repo context file. An existing context location selects the target for an authorized write; it is not write authorization by itself. The context should point to existing instructions first and record evidence-backed conventions such as spec and ticket locations, review severity policy, verification commands, tracker/CI/tooling signals, the lesson store path for `compound-learning`, decision records, and AFK handoff expectations.
 
 The skill is intentionally tool-agnostic: it does not require a specific host, issue tracker, CI system, package manager, framework, or monorepo layout. If no repo convention exists, it should return a context snapshot and candidate location rather than silently imposing one.
 

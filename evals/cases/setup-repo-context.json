@@ -20,13 +20,25 @@
         "Labels conventions as explicit, inferred, or unknown.",
         "Records verification commands, artifact locations, review policy, tooling evidence, lesson store path, and AFK handoff only when supported.",
         "Does not assume a host, tracker, CI, framework, package manager, or monorepo layout.",
-        "Returns unknown tracker convention with a safe fallback instead of inventing one."
+        "Returns unknown tracker convention with a safe fallback instead of inventing one.",
+        "Treats the explicit create request as write authorization."
+      ]
+    },
+    {
+      "id": "read-only-context-discovery",
+      "prompt": "Inspect the repository conventions and summarize where specs, verification, and lessons live; do not change any files.",
+      "expectedSkill": "setup-repo-context",
+      "checks": [
+        "Uses read mode and returns a context snapshot.",
+        "Does not create or update a context file.",
+        "Treats an existing context location as target evidence, not write authorization."
       ]
     }
   ],
   "traceExpectations": [
     "Existing repo context and instructions are preferred over new structure.",
-    "Stale entries are updated only when current evidence contradicts them.",
+    "Stale entries are updated only in authorized write mode and when current evidence contradicts them.",
+    "Writes require an explicit user request or a repo instruction that explicitly requires maintenance.",
     "If no write target is clear, the output gives a context snapshot and candidate locations."
   ]
 }

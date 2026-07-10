@@ -1,21 +1,35 @@
 #!/usr/bin/env node
 
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
 const { spawnSync } = require("child_process");
+const { DEFAULT_MAX_FIXTURE_BYTES, resolveFixtureFile } = require("./eval-files");
+const { validateEvalData } = require("./eval-schema");
 
 const root = process.cwd();
 const casesDir = path.join(root, "evals", "cases");
-const fixturesDir = path.join(root, "evals", "fixtures");
 const resultsDir = path.join(root, "evals", "results");
+const packageFiles = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8")).files || [];
+const WORKSPACE_TOP_LEVEL = new Set([
+  "package.json",
+  "AGENTS.md",
+  ".gitignore",
+  ".github",
+  ...packageFiles.map((entry) => entry.split("/")[0]).filter(Boolean)
+]);
 const agent = process.env.LIVE_EVAL_AGENT;
 const commandOverride = process.env.LIVE_EVAL_COMMAND;
 const judgeCommandOverride = process.env.LIVE_EVAL_JUDGE_COMMAND;
+const DEFAULT_COMMAND_TIMEOUT_MS = 5 * 60 * 1000;
+let commandTimeoutMs = DEFAULT_COMMAND_TIMEOUT_MS;
+let maxFixtureBytes = DEFAULT_MAX_FIXTURE_BYTES;
 
 function usage() {
   console.error("Set LIVE_EVAL_AGENT=codex or LIVE_EVAL_AGENT=claude-code.");
   console.error("Optional: set LIVE_EVAL_COMMAND to override the command. The prompt is appended as the last argument.");
   console.error("Optional: set LIVE_EVAL_JUDGE_COMMAND to use a separate JSON judge command. The judge prompt is appended as the last argument.");
+  console.error("Optional: set LIVE_EVAL_TIMEOUT_MS or LIVE_EVAL_MAX_FIXTURE_BYTES to positive integers.");
 }
 
 function readJson(file) {
@@ -26,25 +40,77 @@ function readText(file) {
   return fs.readFileSync(file, "utf8");
 }
 
-function caseFixtures(item) {
+function positiveIntegerEnv(name, fallback) {
+  const raw = process.env[name];
+  if (raw === undefined || raw === "") {
+    return fallback;
+  }
+  const value = Number(raw);
+  if (!Number.isSafeInteger(value) || value <= 0) {
+    throw new Error(`${name} must be a positive integer`);
+  }
+  return value;
+}
+
+function configureLimits() {
+  commandTimeoutMs = positiveIntegerEnv("LIVE_EVAL_TIMEOUT_MS", DEFAULT_COMMAND_TIMEOUT_MS);
+  maxFixtureBytes = positiveIntegerEnv("LIVE_EVAL_MAX_FIXTURE_BYTES", DEFAULT_MAX_FIXTURE_BYTES);
+}
+
+function copyFilter(source) {
+  const rel = path.relative(root, source);
+  if (!rel) return true;
+  const parts = rel.split(path.sep);
+  if (!WORKSPACE_TOP_LEVEL.has(parts[0])) {
+    return false;
+  }
+  if (parts[0] === "evals" && parts[1] === "results") {
+    return false;
+  }
+  if (fs.lstatSync(source).isSymbolicLink()) {
+    throw new Error(`${rel}: live eval workspaces do not allow symbolic links`);
+  }
+  return true;
+}
+
+function createCaseWorkspace() {
+  const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "engineering-judgment-live-eval-"));
+  const workspace = path.join(tempRoot, "repo");
+  try {
+    fs.cpSync(root, workspace, { recursive: true, filter: copyFilter });
+    return { tempRoot, workspace };
+  } catch (error) {
+    fs.rmSync(tempRoot, { recursive: true, force: true });
+    throw error;
+  }
+}
+
+function cleanupCaseWorkspace(caseWorkspace) {
+  if (caseWorkspace && caseWorkspace.tempRoot) {
+    fs.rmSync(caseWorkspace.tempRoot, { recursive: true, force: true });
+  }
+}
+
+function createJudgeWorkspace() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), "engineering-judgment-live-eval-judge-"));
+}
+
+function cleanupJudgeWorkspace(workspace) {
+  if (workspace) {
+    fs.rmSync(workspace, { recursive: true, force: true });
+  }
+}
+
+function caseFixtures(item, workspace) {
   if (item.fixtures === undefined) {
     return [];
   }
   if (!Array.isArray(item.fixtures)) {
     throw new Error(`${item.id}: fixtures must be an array of fixture file names`);
   }
-
+  const fixturesDir = path.join(workspace, "evals", "fixtures");
   return item.fixtures.map((fixture) => {
-    if (typeof fixture !== "string" || !fixture.trim()) {
-      throw new Error(`${item.id}: fixtures must contain non-empty file names`);
-    }
-    if (path.isAbsolute(fixture) || fixture.includes("..")) {
-      throw new Error(`${item.id}: fixture ${fixture} must stay inside evals/fixtures`);
-    }
-    const full = path.join(fixturesDir, fixture);
-    if (!full.startsWith(`${fixturesDir}${path.sep}`) || !fs.existsSync(full)) {
-      throw new Error(`${item.id}: fixture ${fixture} does not exist`);
-    }
+    const full = resolveFixtureFile(fixturesDir, fixture, maxFixtureBytes);
     return {
       name: fixture,
       path: full,
@@ -84,8 +150,8 @@ function requiresConcreteEvidence(expectation) {
   return /\b(command|output|evidence|read|reads|backend|authorization|permission|test|location|file|diff|patch|repo|context|fixture|sample-diff)\b/i.test(expectation);
 }
 
-function buildPrompt(data, item, fixtures) {
-  const skillPath = path.join(root, "skills", data.skill, "SKILL.md");
+function buildPrompt(data, item, fixtures, workspace) {
+  const skillPath = path.join(workspace, "skills", data.skill, "SKILL.md");
 
   return [
     `Use the Agent Skill at ${skillPath}.`,
@@ -97,12 +163,20 @@ function buildPrompt(data, item, fixtures) {
     .join("\n\n");
 }
 
+function resolveCommandOverride(command) {
+  if (path.isAbsolute(command)) return command;
+  if (command.includes("/") || command.includes("\\")) {
+    return path.resolve(root, command);
+  }
+  return command;
+}
+
 function commandFor(prompt, role = "agent") {
   if (role === "judge" && judgeCommandOverride) {
-    return { command: judgeCommandOverride, args: [prompt], source: "LIVE_EVAL_JUDGE_COMMAND" };
+    return { command: resolveCommandOverride(judgeCommandOverride), args: [prompt], source: "LIVE_EVAL_JUDGE_COMMAND" };
   }
   if (commandOverride) {
-    return { command: commandOverride, args: [prompt], source: "LIVE_EVAL_COMMAND" };
+    return { command: resolveCommandOverride(commandOverride), args: [prompt], source: "LIVE_EVAL_COMMAND" };
   }
   if (agent === "claude-code") {
     return { command: "claude", args: ["-p", prompt, "--output-format", "json"], source: "LIVE_EVAL_AGENT" };
@@ -114,12 +188,30 @@ function commandFor(prompt, role = "agent") {
   process.exit(1);
 }
 
-function runCommand(cmd) {
+function terminateProcessTree(pid) {
+  if (!pid) return false;
+  if (process.platform === "win32") {
+    const result = spawnSync("taskkill", ["/pid", String(pid), "/T", "/F"], { stdio: "ignore" });
+    return result.status === 0;
+  }
+  try {
+    process.kill(-pid, "SIGKILL");
+    return true;
+  } catch (error) {
+    return error.code === "ESRCH";
+  }
+}
+
+function runCommand(cmd, cwd) {
   const result = spawnSync(cmd.command, cmd.args, {
-    cwd: root,
+    cwd,
     encoding: "utf8",
-    maxBuffer: 1024 * 1024 * 10
+    maxBuffer: 1024 * 1024 * 10,
+    timeout: commandTimeoutMs,
+    killSignal: "SIGKILL",
+    detached: true
   });
+  terminateProcessTree(result.pid);
   const output = `${result.stdout || ""}\n${result.stderr || ""}`.trim();
 
   return {
@@ -308,7 +400,25 @@ function normalizeJudgeChecks(parsed, expectations, output) {
 function judgeOutput(data, item, fixtures, output, expectations) {
   const prompt = buildJudgePrompt(data, item, fixtures, output, expectations);
   const cmd = commandFor(prompt, "judge");
-  const result = runCommand(cmd);
+  let workspace;
+  let result;
+  try {
+    workspace = createJudgeWorkspace();
+    result = runCommand(cmd, workspace);
+  } catch (error) {
+    return {
+      judge: {
+        status: "workspace-failed",
+        command: cmd.command,
+        source: cmd.source,
+        error: error.message,
+        outputPreview: ""
+      },
+      checks: reviewChecks(expectations, "Judge workspace could not be created or used safely.")
+    };
+  } finally {
+    cleanupJudgeWorkspace(workspace);
+  }
 
   if (result.status !== 0) {
     return {
@@ -348,15 +458,15 @@ function judgmentStatus(checks) {
 }
 
 function runCase(data, item) {
-  let fixtures;
+  let caseWorkspace;
   try {
-    fixtures = caseFixtures(item);
+    caseWorkspace = createCaseWorkspace();
   } catch (error) {
     const expectations = expectationsFor(data, item);
     return {
       skill: data.skill,
       id: item.id,
-      status: "invalid-case",
+      status: "workspace-failed",
       judgmentStatus: "review",
       command: null,
       fixtures: [],
@@ -366,42 +476,64 @@ function runCase(data, item) {
     };
   }
 
-  const expectations = expectationsFor(data, item);
-  const prompt = buildPrompt(data, item, fixtures);
-  const cmd = commandFor(prompt);
-  const result = runCommand(cmd);
-  const output = result.output;
+  try {
+    let fixtures;
+    try {
+      fixtures = caseFixtures(item, caseWorkspace.workspace);
+    } catch (error) {
+      const expectations = expectationsFor(data, item);
+      return {
+        skill: data.skill,
+        id: item.id,
+        status: "invalid-case",
+        judgmentStatus: "review",
+        command: null,
+        fixtures: [],
+        judge: { status: "not-run", reason: error.message },
+        checks: reviewChecks(expectations, error.message),
+        outputPreview: ""
+      };
+    }
 
-  if (result.status !== 0) {
+    const expectations = expectationsFor(data, item);
+    const prompt = buildPrompt(data, item, fixtures, caseWorkspace.workspace);
+    const cmd = commandFor(prompt);
+    const result = runCommand(cmd, caseWorkspace.workspace);
+    const output = result.output;
+
+    if (result.status !== 0) {
+      return {
+        skill: data.skill,
+        id: item.id,
+        status: "command-failed",
+        judgmentStatus: "review",
+        command: cmd.command,
+        commandSource: cmd.source,
+        commandError: result.error,
+        fixtures: fixtures.map((fixture) => fixture.name),
+        judge: { status: "not-run" },
+        checks: reviewChecks(expectations, "Agent command failed before judging."),
+        outputPreview: output.slice(0, 4000)
+      };
+    }
+
+    const judged = judgeOutput(data, item, fixtures, output, expectations);
+
     return {
       skill: data.skill,
       id: item.id,
-      status: "command-failed",
-      judgmentStatus: "review",
+      status: "completed",
+      judgmentStatus: judgmentStatus(judged.checks),
       command: cmd.command,
       commandSource: cmd.source,
-      commandError: result.error,
       fixtures: fixtures.map((fixture) => fixture.name),
-      judge: { status: "not-run" },
-      checks: reviewChecks(expectations, "Agent command failed before judging."),
+      judge: judged.judge,
+      checks: judged.checks,
       outputPreview: output.slice(0, 4000)
     };
+  } finally {
+    cleanupCaseWorkspace(caseWorkspace);
   }
-
-  const judged = judgeOutput(data, item, fixtures, output, expectations);
-
-  return {
-    skill: data.skill,
-    id: item.id,
-    status: "completed",
-    judgmentStatus: judgmentStatus(judged.checks),
-    command: cmd.command,
-    commandSource: cmd.source,
-    fixtures: fixtures.map((fixture) => fixture.name),
-    judge: judged.judge,
-    checks: judged.checks,
-    outputPreview: output.slice(0, 4000)
-  };
 }
 
 function main() {
@@ -410,10 +542,34 @@ function main() {
     process.exit(1);
   }
 
-  const results = [];
+  try {
+    configureLimits();
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
+
+  const datasets = [];
+  const schemaErrors = [];
   for (const file of fs.readdirSync(casesDir).filter((name) => name.endsWith(".json")).sort()) {
     const data = readJson(path.join(casesDir, file));
-    for (const item of data.cases || []) {
+    const errors = validateEvalData(data);
+    for (const error of errors) {
+      schemaErrors.push(`${path.join("evals", "cases", file)}: ${error}`);
+    }
+    datasets.push(data);
+  }
+  if (schemaErrors.length > 0) {
+    console.error("Live eval case validation failed:");
+    for (const error of schemaErrors) {
+      console.error(`- ${error}`);
+    }
+    process.exit(1);
+  }
+
+  const results = [];
+  for (const data of datasets) {
+    for (const item of data.cases) {
       results.push(runCase(data, item));
     }
   }
@@ -442,4 +598,18 @@ function main() {
   console.log(`Live eval passed for ${results.length} cases.`);
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = {
+  cleanupCaseWorkspace,
+  cleanupJudgeWorkspace,
+  configureLimits,
+  createCaseWorkspace,
+  createJudgeWorkspace,
+  positiveIntegerEnv,
+  resolveCommandOverride,
+  runCommand,
+  terminateProcessTree
+};

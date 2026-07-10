@@ -13,17 +13,29 @@
   "cases": [
     {
       "id": "validated-solution-note",
-      "prompt": "A debugging session found the reliable command and pitfall for future runs.",
+      "prompt": "Capture the validated reliable command and pitfall from this completed debugging session for future runs.",
       "expectedSkill": "compound-learning",
       "checks": [
         "Captures only validated learning.",
         "Separates public generic notes from personal preferences.",
-        "Includes lesson, applies when, evidence, practice, pitfalls, and candidate home."
+        "Includes lesson, applies when, evidence, practice, pitfalls, and candidate home.",
+        "Treats the explicit capture request as write authorization."
+      ]
+    },
+    {
+      "id": "read-only-lesson-check",
+      "prompt": "Check whether prior lessons affect this implementation plan, but do not update the lesson store.",
+      "expectedSkill": "compound-learning",
+      "checks": [
+        "Uses read/apply mode and reports relevant lessons.",
+        "Does not append, update, or supersede a lesson.",
+        "Treats an existing lesson store as location evidence, not write authorization."
       ]
     }
   ],
   "traceExpectations": [
     "Secrets and project-specific private context are not copied into public notes.",
-    "Skill or reference updates trigger validation."
+    "Lesson and shared-skill writes require explicit user or repo-instruction authorization.",
+    "Authorized skill or reference updates trigger validation."
   ]
 }

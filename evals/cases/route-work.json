@@ -13,17 +13,29 @@
   "cases": [
     {
       "id": "ambiguous-routing",
-      "prompt": "We have a vague product architecture change and need to figure out the next step.",
+      "prompt": "Only tell us which skill should handle this vague product architecture change and what the next step is.",
       "expectedSkill": "route-work",
       "checks": [
         "Routes to one focused skill.",
         "Explains why that skill is the right next step.",
-        "Uses the daily flow order without running every phase."
+        "Uses the daily flow order without running every phase.",
+        "Stops at a handoff because the prompt explicitly asks only for routing."
+      ]
+    },
+    {
+      "id": "route-and-continue",
+      "prompt": "Choose the right skill for this release-safety question and complete that workflow instead of only telling me what to use.",
+      "expectedSkill": "route-work",
+      "checks": [
+        "Names one selected skill and a concise reason.",
+        "Continues into the selected skill's workflow in the same response.",
+        "Returns the selected skill's downstream work product."
       ]
     }
   ],
   "traceExpectations": [
-    "The output includes route, reason, and handoff.",
+    "The output clearly identifies the route and reason before any downstream result.",
+    "The output stops at a handoff only for routing-only requests or missing user-owned decisions.",
     "Only one focused skill is selected."
   ]
 }

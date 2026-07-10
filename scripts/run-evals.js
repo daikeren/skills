@@ -2,6 +2,8 @@
 
 const fs = require("fs");
 const path = require("path");
+const { resolveFixtureFile } = require("./eval-files");
+const { validateEvalData } = require("./eval-schema");
 
 const root = process.cwd();
 const casesDir = path.join(root, "evals", "cases");
@@ -249,17 +251,10 @@ function validateFixtureList(rel, item) {
 
   let count = 0;
   for (const fixture of item.fixtures) {
-    if (typeof fixture !== "string" || !fixture.trim()) {
-      fail(`${rel}:${item.id}: fixtures must contain non-empty file names`);
-      continue;
-    }
-    if (path.isAbsolute(fixture) || fixture.includes("..")) {
-      fail(`${rel}:${item.id}: fixture ${fixture} must stay inside evals/fixtures`);
-      continue;
-    }
-    const full = path.join(fixturesDir, fixture);
-    if (!full.startsWith(`${fixturesDir}${path.sep}`) || !fs.existsSync(full)) {
-      fail(`${rel}:${item.id}: fixture ${fixture} does not exist`);
+    try {
+      resolveFixtureFile(fixturesDir, fixture);
+    } catch (error) {
+      fail(`${rel}:${item.id}: fixture ${error.message}`);
       continue;
     }
     count += 1;
@@ -318,43 +313,25 @@ function validateCaseFile(file, routeIndex) {
     return;
   }
 
+  const schemaErrors = validateEvalData(data);
+  for (const error of schemaErrors) {
+    fail(`${rel}: ${error}`);
+  }
+  if (schemaErrors.length > 0) {
+    return;
+  }
+
   if (!skillExists(data.skill)) {
     fail(`${rel}: skill ${data.skill} does not exist`);
   }
 
-  const positivePrompts = data.positivePrompts || [];
-  const negativePrompts = data.negativePrompts || [];
-  const cases = data.cases || [];
-  const traceExpectations = data.traceExpectations || [];
+  const positivePrompts = data.positivePrompts;
+  const negativePrompts = data.negativePrompts;
+  const cases = data.cases;
+  const traceExpectations = data.traceExpectations;
   let fixtureReferences = 0;
 
-  if (positivePrompts.length < 2) {
-    fail(`${rel}: expected at least two positive prompts`);
-  }
-  if (negativePrompts.length < 2) {
-    fail(`${rel}: expected at least two negative prompts`);
-  }
-  if (cases.length === 0) {
-    fail(`${rel}: expected behavioral cases`);
-  }
-  if (traceExpectations.length === 0) {
-    fail(`${rel}: expected trace expectations`);
-  }
-  if (data.fixtures !== undefined) {
-    fail(`${rel}: fixtures must be declared per case, not at the file top level`);
-  }
-
   for (const item of cases) {
-    if (!item.id || !item.prompt || !item.expectedSkill) {
-      fail(`${rel}: each case needs id, prompt, and expectedSkill`);
-      continue;
-    }
-    if (item.expectedSkill !== data.skill) {
-      fail(`${rel}:${item.id}: expectedSkill must match top-level skill`);
-    }
-    if (!Array.isArray(item.checks) || item.checks.length < 2) {
-      fail(`${rel}:${item.id}: checks must include at least two expectations`);
-    }
     fixtureReferences += validateFixtureList(rel, item);
   }
 
@@ -379,6 +356,26 @@ function validateCaseFile(file, routeIndex) {
     fixtureReferences,
     keywordRoutingSignal: positiveScore >= negativeScore ? "pass" : "review"
   });
+}
+
+function formatMatches(matches) {
+  return matches.map((match) => `${match.skill}=${match.score.toFixed(3)}`).join(", ");
+}
+
+function printRoutingWarnings() {
+  if (routingMarginWarnings.length === 0 && negativeRoutingWarnings.length === 0) {
+    return;
+  }
+
+  console.warn(
+    `Eval routing warnings: ${routingMarginWarnings.length} narrow positive margin(s), ${negativeRoutingWarnings.length} negative prompt match(es).`
+  );
+  for (const warning of routingMarginWarnings) {
+    console.warn(`- ${warning.file}: ${JSON.stringify(warning.prompt)} -> ${formatMatches(warning.matches)}`);
+  }
+  for (const warning of negativeRoutingWarnings) {
+    console.warn(`- ${warning.file}: negative ${JSON.stringify(warning.prompt)} -> ${formatMatches(warning.matches)}`);
+  }
 }
 
 function main() {
@@ -413,6 +410,7 @@ function main() {
     errors
   };
   fs.writeFileSync(path.join(resultsDir, "latest.json"), `${JSON.stringify(result, null, 2)}\n`);
+  printRoutingWarnings();
 
   if (errors.length > 0) {
     console.error("Eval sanity checks failed:");

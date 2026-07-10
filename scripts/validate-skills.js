@@ -2,6 +2,8 @@
 
 const fs = require("fs");
 const path = require("path");
+const { resolveFixtureFile } = require("./eval-files");
+const { validateEvalData } = require("./eval-schema");
 
 const root = process.cwd();
 const skillRoot = path.join(root, "skills");
@@ -373,17 +375,10 @@ function validateEvalFixtureList(rel, item) {
   }
 
   for (const fixture of item.fixtures) {
-    if (typeof fixture !== "string" || !fixture.trim()) {
-      fail(`${rel}:${item.id}: fixtures must contain non-empty file names`);
-      continue;
-    }
-    if (path.isAbsolute(fixture) || fixture.includes("..")) {
-      fail(`${rel}:${item.id}: fixture ${fixture} must stay inside evals/fixtures`);
-      continue;
-    }
-    const full = path.join(fixturesRoot, fixture);
-    if (!full.startsWith(`${fixturesRoot}${path.sep}`) || !fs.existsSync(full)) {
-      fail(`${rel}:${item.id}: fixture ${fixture} does not exist`);
+    try {
+      resolveFixtureFile(fixturesRoot, fixture);
+    } catch (error) {
+      fail(`${rel}:${item.id}: fixture ${error.message}`);
     }
   }
 }
@@ -456,25 +451,14 @@ function validateEvalCases() {
       continue;
     }
 
-    if (!data.skill || typeof data.skill !== "string") {
-      fail(`${rel}: missing string skill`);
+    const schemaErrors = validateEvalData(data);
+    for (const error of schemaErrors) {
+      fail(`${rel}: ${error}`);
     }
-    if (!Array.isArray(data.cases) || data.cases.length === 0) {
-      fail(`${rel}: cases must be a non-empty array`);
+    if (schemaErrors.length > 0) {
+      continue;
     }
-    if (!Array.isArray(data.positivePrompts) || data.positivePrompts.length === 0) {
-      fail(`${rel}: positivePrompts must be a non-empty array`);
-    }
-    if (!Array.isArray(data.negativePrompts) || data.negativePrompts.length === 0) {
-      fail(`${rel}: negativePrompts must be a non-empty array`);
-    }
-    if (!Array.isArray(data.traceExpectations) || data.traceExpectations.length === 0) {
-      fail(`${rel}: traceExpectations must be a non-empty array`);
-    }
-    if (data.fixtures !== undefined) {
-      fail(`${rel}: fixtures must be declared per case, not at the file top level`);
-    }
-    for (const item of data.cases || []) {
+    for (const item of data.cases) {
       validateEvalFixtureList(rel, item);
     }
   }

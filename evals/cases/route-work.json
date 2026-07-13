@@ -31,6 +31,20 @@
         "Continues into the selected skill's workflow in the same response.",
         "Returns the selected skill's downstream work product."
       ]
+    },
+    {
+      "id": "learning-not-review",
+      "prompt": "Choose the right skill and continue: I need to understand this pull request well enough to extend it, not review it for defects.",
+      "expectedSkill": "route-work",
+      "fixtures": [
+        "understand-change-state-machine.md"
+      ],
+      "checks": [
+        "Routes to understand-change rather than a review skill.",
+        "Explains that the goal is a usable mental model, not correctness judgment.",
+        "Continues into a background-first learning path.",
+        "Creates and validates the disposable HTML explainer and returns its path or link."
+      ]
     }
   ],
   "traceExpectations": [

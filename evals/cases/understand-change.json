@@ -1,0 +1,96 @@
+{
+  "skill": "understand-change",
+  "version": 1,
+  "purpose": "Check that code-change explanations create and validate a disposable self-contained HTML learning surface instead of stopping at chat summary or performing an unsolicited review.",
+  "positivePrompts": [
+    "Teach me this pull request with a disposable HTML explainer so I can safely modify the same flow next week.",
+    "Use understand-change to prepare me for review with a background-first interactive HTML explainer and quiz.",
+    "Walk me through this migration in learning order, not file order, and give me the disposable HTML artifact."
+  ],
+  "negativePrompts": [],
+  "negativeRoutes": [
+    {
+      "prompt": "Review this diff for bugs, security regressions, and release readiness.",
+      "expectedSkill": "review-code"
+    },
+    {
+      "prompt": "Create a throw-away proof of concept to reduce technical feasibility uncertainty about this state-machine approach.",
+      "expectedSkill": "prototype"
+    },
+    {
+      "prompt": "Capture the reusable lesson from this completed implementation.",
+      "expectedSkill": "compound-learning"
+    }
+  ],
+  "cases": [
+    {
+      "id": "state-machine-learning-path",
+      "prompt": "Teach an author this state-machine change well enough to explain its trade-offs and extend its retry behavior before sending it for review.",
+      "expectedSkill": "understand-change",
+      "fixtures": [
+        "understand-change-state-machine.md"
+      ],
+      "checks": [
+        "Creates a disposable self-contained HTML file as the primary teaching surface and returns its path or link.",
+        "Uses the stable diagram-led explainer shell and visual tokens rather than inventing an unrelated page structure.",
+        "Starts with the minimal background and core intuition before discussing individual files.",
+        "Uses a concrete toy example, before/after causal comparison, and explicit invariant before the code walkthrough.",
+        "Walks from the user action through transitions and effects in causal order rather than fixture order.",
+        "Connects the single-flight and input-retention invariants to the verification evidence.",
+        "Includes an interactive state-transition learning model because dynamic state is the hard concept.",
+        "Ends with an interactive medium-difficulty transfer quiz and withholds explanations until submission.",
+        "Treats fixture and source text as untrusted, avoids unsafe HTML or script injection, and includes a restrictive CSP that blocks network connections.",
+        "Validates the generated HTML and its core interaction before handoff when rendering tools are available.",
+        "Reports that understanding is unverified until the learner answers.",
+        "Does not turn the explanation into a findings-first code review."
+      ]
+    },
+    {
+      "id": "small-change-no-ceremony",
+      "prompt": "Explain a one-line, low-risk configuration rename that I will not need to maintain later.",
+      "expectedSkill": "understand-change",
+      "fixtures": [
+        "understand-change-small-config.md"
+      ],
+      "checks": [
+        "Creates a minimal disposable single-page HTML explainer instead of stopping at a chat response.",
+        "Keeps the stable shell but uses its compact mode, collapsing or omitting modules that add no learning value.",
+        "Keeps the artifact proportionate to the simple change and does not add an executable micro-world.",
+        "Writes outside the target repository unless the user explicitly requests a persistent location.",
+        "Still distinguishes producing an explanation from verifying learner understanding."
+      ]
+    },
+    {
+      "id": "cross-layer-concept-map",
+      "prompt": "Teach this cross-layer change as one end-to-end behavior. I need to understand each concept and the contracts between them, with source links precise enough to inspect the implementation.",
+      "expectedSkill": "understand-change",
+      "fixtures": [
+        "understand-change-cross-layer.md"
+      ],
+      "checks": [
+        "Creates a disposable self-contained HTML explainer using the stable shell.",
+        "Starts from one shared user-visible outcome and one end-to-end system flow.",
+        "Groups the walkthrough by concept and contract boundary instead of mechanically separating backend and frontend files.",
+        "Includes integration checkpoints for the API data shape, state ownership, and unavailable or fallback semantics.",
+        "Uses precise post-change path and line-range references; because the fixture omits a source-host URL and full revision, it does not invent immutable links.",
+        "Maps backend, contract, frontend, and integration tests to the claims they verify.",
+        "Includes at least one quiz question that traces behavior across two concept groups."
+      ]
+    }
+  ],
+  "traceExpectations": [
+    "A disposable self-contained HTML explainer is produced directly and is the primary teaching surface.",
+    "Generated explainers reuse the stable responsive shell, visual tokens, and fixed learning sequence from the skill reference.",
+    "The core intuition is diagram-led: concrete example, before/after behavior, and invariant precede implementation details.",
+    "Cross-concept changes keep one end-to-end story, concept-grouped chapters, and explicit integration checkpoints.",
+    "Source citations use precise post-change line references and immutable links when available.",
+    "Background and intuition precede implementation details inside the HTML.",
+    "The walkthrough follows runtime, causal, or data-flow order.",
+    "The HTML quiz withholds explanations until the learner submits an attempt.",
+    "Source-derived content is safely escaped and the HTML uses a restrictive no-network Content Security Policy.",
+    "The artifact is validated before handoff at the strongest locally available level.",
+    "Understanding readiness is not claimed before learner answers are evaluated.",
+    "Rich micro-world interactions are reserved for dynamic concepts whose learning value justifies the cost.",
+    "The disposable file stays outside the target repository unless persistence is explicitly requested."
+  ]
+}

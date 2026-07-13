@@ -54,6 +54,7 @@ This repo now includes lightweight tool-specific adapters:
 - `product-surface-review`: review workflows, states, accessibility, trust, and support burden.
 - `security-privacy-review`: review permissions, sensitive data, trust boundaries, and abuse cases.
 - `implement-change`: guide coding work to stay small, idiomatic, reversible, and verified.
+- `understand-change`: generate a disposable HTML explainer that teaches a change in learning order and checks the learner's mental model.
 - `review-code`: review diffs with attention to regressions, product risk, security/privacy, operations, and tests.
 - `compound-learning`: read and capture reusable validated lessons before and after work or review.
 
@@ -73,6 +74,7 @@ This repo now includes lightweight tool-specific adapters:
 | Review product surfaces and workflows | `product-surface-review` |
 | Review security, privacy, or abuse risk | `security-privacy-review` |
 | Implement a small verified change | `implement-change` |
+| Get a disposable HTML explainer for a code change | `understand-change` |
 | Review a code diff before release | `review-code` |
 | Read or capture reusable lessons | `compound-learning` |
 
@@ -139,6 +141,7 @@ setup-repo-context (optional per repo)
   -> to-spec
   -> to-tickets
   -> implement-change
+  -> understand-change (when the author or reviewer needs a mental model)
   -> review-code
   -> compound-learning
 ```
@@ -148,6 +151,8 @@ Review-specific shortcuts:
 - Use `architecture-review` for service boundaries, data flow, scaling, reliability, migrations, and dependencies.
 - Use `product-surface-review` for user workflows, states, trust, support burden, and accessibility.
 - Use `security-privacy-review` for auth, permissions, sensitive data, integrations, billing/admin surfaces, and abuse cases.
+
+Use `understand-change` before review when the missing gate is human understanding rather than another correctness check. It directly generates a self-contained disposable HTML explainer outside the target repository, organizes background, intuition, implementation, and verification in learning order, and uses an interactive quiz to expose gaps without claiming that an unopened or untested artifact created understanding.
 
 ## Optional Per-Repo Context
 

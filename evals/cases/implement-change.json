@@ -1,6 +1,6 @@
 {
   "skill": "implement-change",
-  "version": 1,
+  "version": 2,
   "purpose": "Check that implementation tasks detect local tooling and keep changes small.",
   "positivePrompts": [
     "Implement this feature carefully and verify the smallest meaningful surface.",
@@ -20,10 +20,23 @@
         "Preserves user changes and reuses existing patterns.",
         "Updates contracts end to end and verifies the riskiest behavior."
       ]
+    },
+    {
+      "id": "stateful-integration-checkpoint",
+      "prompt": "Implement the next fix for a dashboard that combines async lifecycle data, permissions, retries, and handoffs across multiple histories. Two prior review passes already found different P2 bugs in the same state logic.",
+      "expectedSkill": "implement-change",
+      "checks": [
+        "Stops the isolated patch loop and reconstructs the shared invariant before editing.",
+        "Names state precedence, the canonical identity or episode boundary, event order, async ownership, and fallback semantics.",
+        "Separates unavailable or error state from empty or successful state and treats consequential uncertainty as fail-closed.",
+        "Builds a compact adversarial matrix covering stale responses, prior episodes, alternate matching paths, partial data, and permissions.",
+        "Derives table, transition, timeline, or race regression coverage from the model before or alongside the fix."
+      ]
     }
   ],
   "traceExpectations": [
     "Verification command is chosen from repo evidence.",
+    "Stateful changes use an explicit checkpoint rather than accumulating local boolean or fallback patches.",
     "Final response names changed files, verification, and residual risk."
   ]
 }

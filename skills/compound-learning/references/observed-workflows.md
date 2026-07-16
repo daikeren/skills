@@ -43,6 +43,15 @@ not here.
 - Pitfalls: long multi-section examples that bloat the skill body.
 - Candidate home: every skill Output section.
 
+### Repeated same-family findings require an invariant reset
+
+- Lesson: a second confirmed issue in the same state, identity, ordering, or fallback family is evidence that the work lacks an explicit invariant model, not merely another isolated edge case.
+- Applies when: implementing or reviewing lifecycle-heavy UI, async integration, retry or fallback logic, temporal workflows, or systems with several representations of the same logical entity.
+- Evidence: repeated fix-review passes can validate each local patch while adjacent reachable failures remain in state precedence, prior episodes, alternate identity paths, partial persistence, or broad fallbacks.
+- Practice: stop the local patch loop; reconstruct state axes, canonical identity or episode boundary, event order, async ownership, and fallback semantics, then derive adversarial regression coverage before continuing.
+- Pitfalls: adding one conditional and one example test per finding, or interpreting repeated review findings as a need for more identical review passes.
+- Candidate home: `implement-change` and `review-code` workflows and evals.
+
 ## Reference Repos
 
 - `mattpocock/skills`: keep skills small, composable, and daily usable; distinguish user-invoked orchestration from model-invoked discipline; slice work as vertical tracer bullets with blocking edges.

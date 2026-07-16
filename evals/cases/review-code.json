@@ -1,6 +1,6 @@
 {
   "skill": "review-code",
-  "version": 1,
+  "version": 2,
   "purpose": "Check that review tasks produce findings-first code review instead of style commentary or summaries first.",
   "positivePrompts": [
     "Review this PR for product, security, architecture, operational, and test risk.",
@@ -38,12 +38,28 @@
         "Names residual risk or verification limits briefly.",
         "Keeps the change summary secondary."
       ]
+    },
+    {
+      "id": "stateful-cross-path-regression",
+      "prompt": "Review this stateful handoff-summary patch after two prior medium-severity fixes. Focus on whether the current episode can be cleared by stale data from another history or identity path.",
+      "expectedSkill": "review-code",
+      "fixtures": [
+        "stateful-handoff-diff.md"
+      ],
+      "checks": [
+        "Reconstructs the event timeline and notices that the triggering turn can precede activation while marker persistence follows it.",
+        "Identifies that filtering and ranking independently per identity path lets an older marked candidate beat the globally latest unmarked turn.",
+        "Challenges the pair-wide fallback because it can turn an unresolved or unknown episode into cleared state using a reply from another history.",
+        "Groups the issues under missing canonical episode identity instead of treating every branch as an unrelated edge case.",
+        "Requests timeline, prior-episode, mixed-metadata-path, and fallback regression coverage while keeping findings scoped to the patch."
+      ]
     }
   ],
   "traceExpectations": [
     "Findings appear before summary.",
     "Each finding has severity, impact, and location when available.",
     "Review uses parallel subagents when available or names an isolated-pass fallback.",
+    "Stateful reviews reconstruct state precedence, event order, canonical identity, async ownership, and fallback behavior before declaring readiness.",
     "Review considers product, security/privacy, architecture, operations, and tests when relevant."
   ]
 }

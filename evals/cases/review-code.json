@@ -40,6 +40,20 @@
       ]
     },
     {
+      "id": "executable-proof-for-release-finding",
+      "prompt": "Review the customer-export authorization behavior in the attached fixture and determine whether it is release-safe.",
+      "expectedSkill": "review-code",
+      "fixtures": [
+        "review-executable-proof.js"
+      ],
+      "checks": [
+        "Runs node evals/fixtures/review-executable-proof.js as a narrow, safe reproduction instead of relying only on static inspection.",
+        "Cites the observed output showing the required customer:export permission, an empty member permission set, and exportedCustomerCount 1 as executable evidence of the contract violation.",
+        "Reports the reachable authorization regression before summaries, with severity, impact, location, and the smallest credible fix direction.",
+        "Distinguishes executable evidence from static code evidence and does not claim runtime proof if execution was unavailable."
+      ]
+    },
+    {
       "id": "stateful-cross-path-regression",
       "prompt": "Review this stateful handoff-summary patch after two prior medium-severity fixes. Focus on whether the current episode can be cleared by stale data from another history or identity path.",
       "expectedSkill": "review-code",
@@ -58,6 +72,7 @@
   "traceExpectations": [
     "Findings appear before summary.",
     "Each finding has severity, impact, and location when available.",
+    "When a high-impact finding has a safe narrow reproduction path, the review uses it and identifies the resulting proof as executable evidence.",
     "Review uses parallel subagents when available or names an isolated-pass fallback.",
     "Stateful reviews reconstruct state precedence, event order, canonical identity, async ownership, and fallback behavior before declaring readiness.",
     "Review considers product, security/privacy, architecture, operations, and tests when relevant."

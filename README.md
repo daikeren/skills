@@ -1,5 +1,7 @@
 # Agent Skills for Software Delivery
 
+[English](README.md) | [繁體中文（台灣）](README.zh-TW.md)
+
 Reusable agent skills for coding agents that need to operate beyond code generation. The skills in this repository help agents balance product goals, architecture, user impact, security and privacy, cost, operations, and team speed while still shipping small verified changes.
 
 This is a public core, not a company-specific workflow pack. It does not assume GitHub, Linear, Django, Next.js, a monorepo, or any single toolchain. Skills should detect local tooling from the repository, CI, docs, and user-provided context before acting.
@@ -127,7 +129,15 @@ LIVE_EVAL_AGENT=codex npm run eval:live
 LIVE_EVAL_AGENT=claude-code npm run eval:live
 ```
 
-The live runner executes each candidate case in a disposable copy of the published repository surfaces, runs the judge from a separate empty temporary directory, rejects unsafe fixture paths and symbolic links, and applies per-command timeouts with process-group cleanup. It writes `evals/results/live-latest.json` in the source checkout. Keep it out of the fast CI gate because it depends on local agent installation, credentials, model availability, and cost.
+To run only selected cases:
+
+```bash
+LIVE_EVAL_AGENT=codex \
+LIVE_EVAL_CASES=implement-change/cross-stack-change,review-code/permission-regression \
+npm run eval:live
+```
+
+The live runner executes each candidate case in a disposable copy of the published repository surfaces, runs the judge from a separate empty temporary directory, rejects unsafe fixture paths and symbolic links, and applies per-command timeouts with process-group cleanup. Codex runs use a private temporary home containing only the authentication file; on normal exit, `SIGHUP`, `SIGINT`, or `SIGTERM`, the runner removes active process trees, temporary workspaces, and the credential copy. A hard kill or host failure can still leave temporary credential residue that must be removed manually. The runner writes `evals/results/live-latest.json` in the source checkout. Keep it out of the fast CI gate because it depends on local agent installation, credentials, model availability, and cost.
 
 ## Daily Flow
 

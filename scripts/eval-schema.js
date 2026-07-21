@@ -90,6 +90,8 @@ function validateEvalData(data) {
     }
     if (!isNonEmptyString(item.id)) {
       errors.push(`${prefix}.id must be a non-empty string`);
+    } else if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(item.id)) {
+      errors.push(`${prefix}.id must be kebab-case`);
     } else if (caseIds.has(item.id)) {
       errors.push(`${prefix}.id must be unique; duplicate ${item.id}`);
     } else {

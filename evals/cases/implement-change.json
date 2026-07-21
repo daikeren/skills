@@ -22,6 +22,20 @@
       ]
     },
     {
+      "id": "intent-kernel-prevents-overbuilding",
+      "prompt": "Implement the requested sign-in audit change from the throwaway repository snapshot. Keep the result production-ready without building speculative infrastructure.",
+      "expectedSkill": "implement-change",
+      "fixtures": [
+        "implement-intent-kernel.md"
+      ],
+      "checks": [
+        "Before proposing edits, names the requested behavior, the nearest successful repository example, and explicit non-goals or boundaries.",
+        "Reuses the existing writeAudit call shape and limits the implementation to the sign-in path plus its focused test.",
+        "Does not introduce a tracing subsystem, dependency, configuration, or unrelated audit-event migration.",
+        "Selects npm test -- test/auth/sign-in.test.js as the focused verification command from repository evidence."
+      ]
+    },
+    {
       "id": "stateful-integration-checkpoint",
       "prompt": "Implement the next fix for a dashboard that combines async lifecycle data, permissions, retries, and handoffs across multiple histories. Two prior review passes already found different P2 bugs in the same state logic.",
       "expectedSkill": "implement-change",
@@ -36,6 +50,7 @@
   ],
   "traceExpectations": [
     "Verification command is chosen from repo evidence.",
+    "Ambiguous future goals do not expand the current slice beyond the requested behavior and established repository patterns.",
     "Stateful changes use an explicit checkpoint rather than accumulating local boolean or fallback patches.",
     "Final response names changed files, verification, and residual risk."
   ]

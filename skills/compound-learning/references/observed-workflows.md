@@ -52,6 +52,15 @@ not here.
 - Pitfalls: adding one conditional and one example test per finding, or interpreting repeated review findings as a need for more identical review passes.
 - Candidate home: `implement-change` and `review-code` workflows and evals.
 
+### Baseline behavior before expanding a skill
+
+- Lesson: when an article, transcript, or anecdote suggests a new skill rule, a targeted behavioral baseline should prove the gap before the skill body grows.
+- Applies when: external workflow advice appears useful but may already be covered by a skill's existing constraints or by current model behavior.
+- Evidence: after fixture and runner defects were corrected, a final targeted live run completed without command failures but did not establish a passing baseline. `implement-change` omitted the explicit pre-edit intent/example/boundary framing, while `review-code` chose a local review for the small fixture without naming the isolated-pass fallback. Treat both behaviors as pending product decisions rather than claiming the unchanged skills already guarantee them.
+- Practice: encode the proposed behavior in a minimal case and fixture, run only that baseline, then edit the skill only for a confirmed behavior failure.
+- Pitfalls: treating infrastructure or fixture failures as skill failures, or accumulating model-specific advice in a portable public skill.
+- Candidate home: skill-pack maintenance conventions and targeted live-eval tooling.
+
 ## Reference Repos
 
 - `mattpocock/skills`: keep skills small, composable, and daily usable; distinguish user-invoked orchestration from model-invoked discipline; slice work as vertical tracer bullets with blocking edges.

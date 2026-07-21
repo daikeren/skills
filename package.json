@@ -29,6 +29,7 @@
   },
   "files": [
     "README.md",
+    "README.zh-TW.md",
     "CHANGELOG.md",
     "skills/",
     "commands/",

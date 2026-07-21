@@ -50,6 +50,10 @@ const duplicateIds = clone(validCase());
 duplicateIds.cases.push(clone(duplicateIds.cases[0]));
 expectError(duplicateIds, "id must be unique");
 
+const invalidCaseId = clone(validCase());
+invalidCaseId.cases[0].id = "not_selectable";
+expectError(invalidCaseId, "id must be kebab-case");
+
 const pairedRoutes = clone(validCase());
 pairedRoutes.negativePrompts = [];
 pairedRoutes.negativeRoutes = [

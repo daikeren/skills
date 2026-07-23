@@ -45,10 +45,31 @@
         "Continues into a background-first learning path.",
         "Creates and validates the disposable HTML explainer and returns its path or link."
       ]
+    },
+    {
+      "id": "raise-fidelity-to-prototype",
+      "prompt": "Choose the right skill and continue: the product goal for diagram search is clear, but discussion cannot tell us whether grouped results, filters, or a flat list will feel right.",
+      "expectedSkill": "route-work",
+      "checks": [
+        "Routes to prototype because the unresolved question depends on seeing and exercising interaction behavior.",
+        "Explains the fidelity increase rather than treating prototype as a mandatory planning phase.",
+        "Continues into a disposable, learning-oriented prototype workflow."
+      ]
+    },
+    {
+      "id": "keep-settled-contract-in-spec",
+      "prompt": "Choose the right skill and continue: the modal behavior is already settled—cancel closes it and confirm submits it—and we now need the implementation contract, rollout, and validation written down.",
+      "expectedSkill": "route-work",
+      "checks": [
+        "Routes to to-spec rather than prototype because words and existing decisions are sufficient.",
+        "Explains that no higher-fidelity artifact is needed to settle the behavior.",
+        "Continues into a lightweight implementation spec."
+      ]
     }
   ],
   "traceExpectations": [
     "The output clearly identifies the route and reason before any downstream result.",
+    "The route uses the lowest fidelity that can answer the current question honestly.",
     "The output stops at a handoff only for routing-only requests or missing user-owned decisions.",
     "Only one focused skill is selected."
   ]

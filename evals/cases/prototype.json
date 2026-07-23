@@ -4,11 +4,18 @@
   "purpose": "Check that prototype work stays disposable and learning-oriented.",
   "positivePrompts": [
     "Build a throw-away prototype to test whether this workflow feels right.",
-    "Create a disposable proof of concept for this data parser."
+    "Create a disposable proof of concept for this data parser.",
+    "We know the product goal, but need to test several search interactions and learn which workflow feels right before committing to production code."
   ],
   "negativePrompts": [
     "Write a production migration plan.",
     "Review this patch for security risk."
+  ],
+  "negativeRoutes": [
+    {
+      "prompt": "The direction and modal behavior are chosen; convert them into a lightweight implementation spec with goals, non-goals, UX contract, rollout, and validation.",
+      "expectedSkill": "to-spec"
+    }
   ],
   "cases": [
     {
@@ -32,9 +39,31 @@
         "Labels the prototype inconclusive if evidence cannot be produced.",
         "Does not treat the existence of demo code as proof."
       ]
+    },
+    {
+      "id": "implicit-high-fidelity-ui",
+      "prompt": "We agree on the search goal, but cannot tell from discussion whether grouped results, filters, or a flat list will feel right. Choose the next useful step and carry it out without committing to production code.",
+      "expectedSkill": "prototype",
+      "checks": [
+        "Explains that interaction behavior requires a higher-fidelity artifact than further discussion or specification.",
+        "Defines a focused learning target and compares only the smallest useful UI variants.",
+        "Keeps the artifact disposable and ties the resulting decision to concrete user-flow observations."
+      ]
+    },
+    {
+      "id": "implicit-logic-state-model",
+      "prompt": "The requirements are understood, but the retry state model is still hard to reason about on paper. Determine the smallest next step before production implementation.",
+      "expectedSkill": "prototype",
+      "checks": [
+        "Chooses a small executable harness or equivalent disposable artifact instead of expanding the prose spec.",
+        "Names the difficult state transitions or cases the artifact must exercise.",
+        "Requires concrete output or traces before claiming the state model works."
+      ]
     }
   ],
   "traceExpectations": [
+    "The fidelity gate keeps questions in discussion or specification when words and existing evidence are enough.",
+    "Questions that depend on interaction feel, state behavior, data shape, or integration feasibility route to a prototype.",
     "Prototype verification includes a concrete observation.",
     "Learned claims are tied directly to Evidence/Observation.",
     "Production hardening is explicitly deferred."

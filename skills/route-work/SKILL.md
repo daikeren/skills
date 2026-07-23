@@ -14,7 +14,7 @@ description: Routes product and engineering work to the right focused skill. Use
 5. Human owns decisions; agent owns routing facts, gaps, and assumptions. If the user is absent, route only when readiness facts are enough and assumptions are low-risk.
 6. Prefer the earliest missing readiness gate in the daily flow: scope -> options -> spec -> tickets -> implementation -> optional change understanding -> review -> compound learning.
 7. If the task needs current external facts, route to `research-brief` before deciding.
-8. If uncertainty can be reduced faster by a disposable proof, route to `prototype`.
+8. Apply a fidelity gate before routing to more planning or production work. Use the lowest fidelity that can answer the current question: stay with discussion, scoping, options, or a spec when words and existing evidence are enough; route to `prototype` when the decision depends on seeing, feeling, exercising, or measuring an artifact, such as interaction behavior, a state model, data shape, or integration feasibility. Do not route to `prototype` merely because code is cheap or the work is large.
 9. State the chosen skill and why, then apply that skill's workflow. Stop at a handoff only when the user asked for routing alone or the selected skill requires a missing user-owned decision.
 
 ## Output

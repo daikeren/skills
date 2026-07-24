@@ -1,10 +1,13 @@
 {
   "skill": "implement-change",
   "version": 2,
-  "purpose": "Check that implementation tasks detect local tooling and keep changes small.",
+  "purpose": "Check that implementation tasks detect local tooling, keep changes small, and handle mixed scope using semantic evidence.",
   "positivePrompts": [
     "Implement this feature carefully and verify the smallest meaningful surface.",
-    "Use implement-change for this cross-stack bug fix."
+    "Use implement-change for this cross-stack bug fix.",
+    "Implement a small backend idempotency fix for retries after ambiguous timeouts. Existing tests cover only the happy path. Keep the production change small, but create a disposable replay or concurrency probe to challenge duplicate effects before finalizing; do not retain the probe unless it proves durable value.",
+    "Implement a production database migration and use a disposable migration dry run to verify it before rollout.",
+    "Implement the webhook integration fix and use a disposable request replay to verify the retained production change."
   ],
   "negativePrompts": [
     "Only produce a research brief.",
@@ -46,12 +49,46 @@
         "Builds a compact adversarial matrix covering stale responses, prior episodes, alternate matching paths, partial data, and permissions.",
         "Derives table, transition, timeline, or race regression coverage from the model before or alongside the fix."
       ]
+    },
+    {
+      "id": "mixed-diff-scope-fit",
+      "prompt": "Finish the parser crash fix in the supplied mixed diff. Run the final scope-fit checkpoint, decide what should remain, and do not discard existing user work.",
+      "expectedSkill": "implement-change",
+      "fixtures": [
+        "mixed-scope-implementation-diff.md"
+      ],
+      "checks": [
+        "Restates the intended parser-fix outcome and maps the supplied changed surfaces to it before judging scope.",
+        "Keeps the grammar fix and regression test, and justifies the generated table with the checked-in artifact and CI consistency constraint.",
+        "Removes the unused task-created dependency and its generated lockfile entry, and splits the independent CI timeout edit from the parser fix.",
+        "Treats dependency, CI, formatting, subsystem, and diff-size signals as review prompts rather than proof of scope creep.",
+        "Inspects semantic relationships instead of relying only on path keywords, directory count, or line count.",
+        "Preserves the pre-existing user-authored authentication formatting hunk and asks before reverting, unstaging, or relocating it."
+      ]
+    },
+    {
+      "id": "backend-evidence-amplification",
+      "prompt": "Implement a small backend idempotency fix for retries after ambiguous timeouts. Existing tests cover only the happy path. Keep the production change small, but create a disposable replay or concurrency probe to challenge duplicate effects before finalizing; do not retain the probe unless it proves durable value.",
+      "expectedSkill": "implement-change",
+      "fixtures": [
+        "backend-verification-candidate.mjs",
+        "backend-verification-contract.md"
+      ],
+      "checks": [
+        "States the idempotency invariant and the observable result that would falsify it before building the probe.",
+        "Keeps the backend production patch small while using an isolated replay, timeout, or concurrency probe to amplify evidence.",
+        "Compares the consequential result with an independent invariant, known-good result, or separately derived oracle instead of trusting generated implementation and verification to confirm each other.",
+        "Records concrete probe output and still preserves required human review, release gates, and durable regression coverage.",
+        "Discards or quarantines the probe by default and promotes it only when ongoing value, reviewability, and maintenance cost justify retention."
+      ]
     }
   ],
   "traceExpectations": [
     "Verification command is chosen from repo evidence.",
     "Ambiguous future goals do not expand the current slice beyond the requested behavior and established repository patterns.",
     "Stateful changes use an explicit checkpoint rather than accumulating local boolean or fallback patches.",
+    "Poorly observable material claims can use disposable evidence-amplification probes across frontend, backend, data, integration, or operational paths.",
+    "Broad or mixed diffs use keep, split, or justify dispositions grounded in semantic evidence.",
     "Final response names changed files, verification, and residual risk."
   ]
 }

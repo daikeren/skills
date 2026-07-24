@@ -1,17 +1,28 @@
 {
   "skill": "prototype",
   "version": 1,
-  "purpose": "Check that prototype work stays disposable and learning-oriented.",
+  "purpose": "Check that prototype work stays disposable and evidence-oriented before or alongside production work.",
   "positivePrompts": [
     "Build a throw-away prototype to test whether this workflow feels right.",
     "Create a disposable proof of concept for this data parser.",
     "We know the product goal, but need to test several search interactions and learn which workflow feels right before committing to production code."
   ],
   "negativePrompts": [
-    "Write a production migration plan.",
     "Review this patch for security risk."
   ],
   "negativeRoutes": [
+    {
+      "prompt": "Implement a production database migration and use a disposable migration dry run to verify it before rollout.",
+      "expectedSkill": "implement-change"
+    },
+    {
+      "prompt": "Implement the webhook integration fix and use a disposable request replay to verify the retained production change.",
+      "expectedSkill": "implement-change"
+    },
+    {
+      "prompt": "The database migration direction is approved; write the production specification with compatibility, rollout sequencing, rollback, monitoring, and validation requirements.",
+      "expectedSkill": "to-spec"
+    },
     {
       "prompt": "The direction and modal behavior are chosen; convert them into a lightweight implementation spec with goals, non-goals, UX contract, rollout, and validation.",
       "expectedSkill": "to-spec"
@@ -59,11 +70,30 @@
         "Names the difficult state transitions or cases the artifact must exercise.",
         "Requires concrete output or traces before claiming the state model works."
       ]
+    },
+    {
+      "id": "alongside-backend-verification",
+      "prompt": "A small production patch changes financial-ledger rounding and retry behavior and will still receive full human review. Before deciding it is safe, use disposable code alongside the implementation to challenge its assumptions without adding the harness to production.",
+      "expectedSkill": "prototype",
+      "fixtures": [
+        "backend-verification-candidate.mjs",
+        "backend-verification-contract.md"
+      ],
+      "checks": [
+        "Treats disposable verification as an extension of prototype work without weakening the existing pre-implementation exploration path.",
+        "States the backend calculation and retry claims to falsify and identifies a separately derived oracle, invariant, or known-good comparison.",
+        "Uses an isolated differential, adversarial-input, or replay harness and requires concrete results before drawing a conclusion.",
+        "Keeps the production patch subject to full human review and existing release gates, and keeps the disposable harness outside the retained production diff.",
+        "Does not optimize for generated line count; permits a larger harness only when it materially improves evidence at low isolated risk.",
+        "Discards or quarantines the harness unless ongoing value and maintenance cost justify promotion into durable tests or tooling."
+      ]
     }
   ],
   "traceExpectations": [
     "The fidelity gate keeps questions in discussion or specification when words and existing evidence are enough.",
     "Questions that depend on interaction feel, state behavior, data shape, or integration feasibility route to a prototype.",
+    "Disposable verification can challenge material frontend, backend, data, integration, or operational claims alongside production work without replacing existing prototype exploration.",
+    "Consequential claims use an independent oracle, invariant, known-good result, or separately derived comparison rather than generated self-confirmation.",
     "Prototype verification includes a concrete observation.",
     "Learned claims are tied directly to Evidence/Observation.",
     "Production hardening is explicitly deferred."

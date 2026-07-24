@@ -1,6 +1,6 @@
 ---
 name: implement-change
-description: Guides coding work to stay small, reversible, idiomatic, and verified while protecting user changes. Use when implementing a feature, bug fix, refactor, migration, or cross-stack change where the agent must detect local tooling, preserve diffs, update contracts, and verify the smallest meaningful surface.
+description: Guides coding work to stay small, reversible, idiomatic, and verified while protecting user changes. Use when implementing a feature, bug fix, refactor, migration, or cross-stack change where the agent must detect local tooling, preserve diffs, update contracts, and verify the smallest meaningful surface; this remains the owning workflow when isolated disposable frontend, backend, data, integration, or operational probes such as request replays, migration dry runs, contract checks, load or concurrency probes, and custom traces are needed to verify the retained production change.
 ---
 
 # Implement Change
@@ -17,8 +17,9 @@ description: Guides coding work to stay small, reversible, idiomatic, and verifi
 8. Protect user work. Treat unexpected diffs as user-authored and work around them unless the user asks otherwise.
 9. Human owns product, policy, rollout, and irreversible decisions; agent owns implementation facts, diffs, and evidence. If the user is absent, proceed only with explicitly recorded low-risk assumptions.
 10. Update contracts end to end when behavior crosses layers: schemas, APIs, service logic, hooks/types, UI states, docs, and tests.
-11. Verify the riskiest behavior with the smallest meaningful command or manual check. Record the exact command or manual check invocation and the result summary; include relevant output on failure or surprising pass. If verification cannot run, explain the blocker.
-12. Before finalizing, review your own diff for accidental scope creep, missing tests, migration hazards, permissions, data exposure, and docs/i18n gaps.
+11. Run the evidence-amplification checkpoint when a material implementation claim remains poorly observable with existing checks.
+12. Verify the riskiest behavior with the smallest meaningful command or manual check. Record the exact command or manual check invocation and the result summary; include relevant output on failure or surprising pass. If verification cannot run, explain the blocker.
+13. Before finalizing, run the scope-fit checkpoint, then review the retained diff for missing tests, migration hazards, permissions, data exposure, and docs/i18n gaps.
 
 ## Stateful-Change Checkpoint
 
@@ -32,6 +33,30 @@ Before implementation, name only the dimensions that can change correctness:
 
 Turn the important invariants into table-driven, transition, timeline, or race regression coverage before or alongside the implementation. Prefer a first-class identity or state transition over increasingly broad inference and fallback logic.
 
+## Evidence-Amplification Checkpoint
+
+When existing tests, tools, or inspection cannot settle a material implementation claim, consider a disposable verification probe before expanding or hardening the production change:
+
+1. State the claim or invariant to challenge and the concrete observation that would falsify it.
+2. Choose an isolated probe suited to the path: UI interaction harness, request replay, differential or adversarial input generator, load or concurrency probe, migration dry run, custom trace or debugger, or temporary lint or contract check. Apply this across frontend, backend, data, integration, and operational code rather than treating it as a UI-only technique.
+3. Keep the retained production diff small and keep the probe separate when practical. Generate the probe because it improves evidence, not merely because code is cheap.
+4. For consequential claims, compare against an independent oracle, invariant, known-good result, or separately derived implementation. Generated production code and generated verification may share the same failure mode.
+5. Record the result, then discard or quarantine the probe by default. Promote it into durable tests or tooling only when ongoing value, reviewability, and maintenance cost justify retention.
+
+Disposable verification supplements required human review, release gates, and durable regression coverage; it does not replace them. Skip this checkpoint when existing focused verification already answers the material question.
+
+## Scope-Fit Checkpoint
+
+Before finalizing a change whose diff is broader than the stated outcome:
+
+1. Restate the intended outcome in one line, then map each changed file or coherent hunk to that outcome.
+2. Treat dependency additions, public contract renames, config, CI or build edits, formatting-only churn, generated or lockfile noise, cross-subsystem spread, and oversized mixed hunks as review prompts, not proof of scope creep.
+3. Give each questionable item one disposition: **keep** when it is directly necessary; **split** when it is independently valuable or unrelated; **justify** when a cross-cutting invariant or build constraint makes separation unsafe.
+4. Inspect the actual change and its callers, tests, contracts, and generated relationships. Do not infer scope fit from path keywords, directory count, or diff size alone.
+5. Remove incidental edits created during the task. Ask before reverting, unstaging, relocating, or otherwise altering user-authored work.
+
+Keep this checkpoint lightweight for a small coherent diff. Report the dispositions only when the scope is genuinely mixed, a surprising surface remains, or a follow-up split is useful.
+
 ## Output
 
 During work, report only meaningful progress. At completion, include:
@@ -39,6 +64,7 @@ During work, report only meaningful progress. At completion, include:
 - Changed files and why.
 - Verification evidence: exact command or manual check invoked, result summary, and relevant output for failures or surprising passes.
 - User-facing behavior changed.
+- Scope disposition when relevant: surprising changes kept, split, or justified.
 - Residual risk, rollout gaps, or tests not run.
 
 Example completion report:
@@ -57,5 +83,7 @@ Residual risk: no load test on the new unique index.
 - Existing helpers, services, patterns, settings, flags, and tests were reused where practical.
 - Stateful or integration-heavy changes named state precedence, canonical identity, event order, and fallback semantics before editing.
 - A second same-family finding triggered an invariant-level reassessment instead of another isolated patch.
+- Material claims that existing checks could not settle used an isolated evidence-amplification probe or recorded why one was unnecessary.
 - Cross-layer contracts were updated together.
+- Broad or mixed diffs were checked against the one-line outcome with keep, split, or justify dispositions based on semantic evidence.
 - Completion includes verification evidence, not just a claim that checks passed.

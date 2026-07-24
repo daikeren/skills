@@ -23,7 +23,7 @@ description: Performs findings-first review of code diffs, PRs, patches, or unco
    - State and temporal correctness, when relevant: lifecycle precedence, event ordering, stale ownership, canonical identity, previous episodes, alternate matching paths, partial data, and whether fallbacks fail safely.
 10. If subagents are unavailable or the diff is tiny, run the same lenses as isolated local passes and note that fallback briefly after the findings.
 11. Before final aggregation, check relevant repo-local context or lessons if a lightweight store is evident, such as review notes, project memory, ADRs, or a public lessons log. Apply only lessons that match the current review target and are supported by repo evidence; do not block if no store exists.
-12. Aggregate the reports. Verify each candidate finding against the code or diff, deduplicate overlaps, drop speculative issues that lack impact, classify missing validation separately from current defects, and rerank by severity. Unlike single-axis review, `review-code` should integrate the lenses into one findings-first risk order while preserving useful lens context.
+12. Aggregate the reports. Verify each candidate finding against the code or diff, deduplicate overlaps, drop speculative issues that lack impact, classify missing validation separately from current defects, and rerank blocking findings before non-blocking findings, then by severity. Unlike single-axis review, `review-code` should integrate the lenses into one findings-first risk order while preserving useful lens context.
 13. Avoid assuming a specific host, CI, framework, issue tracker, or deployment path. Infer tooling from repo evidence.
 14. Preserve user work. Do not suggest reverting unrelated changes unless the user explicitly asks.
 15. If no actionable findings exist, say so clearly and name any residual risk or test gap.
@@ -41,10 +41,16 @@ Use this lens when a change combines lifecycle states, async work, retries or fa
 
 ## Output
 
-Lead with findings, ordered by severity:
+Lead with a release verdict, then findings with blocking items first and severity order within each group:
 
-- `[P0]` release blocker, active exploit, data loss, widespread outage, or irreversible destructive behavior.
-- `[P1]` likely user-facing regression, authorization/privacy break, migration hazard, or serious operational risk.
+- `Block`: at least one finding must be resolved or explicitly risk-accepted before merge or release.
+- `Approve with follow-ups`: no blocking findings, but non-blocking work remains.
+- `Approve`: no actionable findings.
+
+Use severity for impact if the issue occurs, independent of whether it blocks this release:
+
+- `[P0]` catastrophic impact such as active compromise, irrecoverable data loss, widespread outage, or irreversible destructive behavior.
+- `[P1]` serious user or business harm, authorization/privacy break, migration corruption, or major operational failure.
 - `[P2]` moderate bug, missing guardrail, important test gap, or maintainability issue with plausible near-term cost.
 - `[P3]` low-risk issue that still affects correctness, clarity, or future review.
 
@@ -52,19 +58,35 @@ Use confidence labels:
 
 - High: directly observed in code, diff, design, or behavior with an unambiguous trace to impact.
 - Medium: supported by concrete evidence, but one assumption remains about runtime behavior, configuration, user path, or intended policy.
-- Low: plausible risk with incomplete evidence; frame as an assumption or open question and avoid P0/P1 severity.
+- Low: plausible risk with incomplete evidence; keep the impact severity conditional and state the assumption or open question that needs validation.
 
-Each finding should include severity, confidence, type (`current defect/regression`, `missing validation`, or `optional improvement`), evidence, impact, and the smallest credible fix direction. P0/P1 findings require concrete evidence: file:line or surface reference plus a short quote or paraphrase of the offending line, state, or behavior when available. If evidence cannot be cited, lower the severity or mark it as an assumption or open question. Example finding:
+Use likelihood separately from confidence:
+
+- High: common or broadly exposed path with few preconditions.
+- Medium: reachable path with meaningful preconditions.
+- Low: uncommon timing, state, configuration, or user sequence.
+
+Assign an explicit disposition to every finding:
+
+- `Blocking`: must be fixed or explicitly risk-accepted before merge or release.
+- `Non-blocking`: actionable in the current review, but safe to merge as-is.
+- `Follow-up`: not required for this change and concrete enough for a separate ticket.
+
+Do not infer disposition from severity or likelihood alone. A low-likelihood issue remains blocking when the consequence is catastrophic or difficult to contain or recover from, including authorization or privacy breaches, cross-tenant exposure, data loss, duplicate or incorrect financial effects, destructive migrations, or irreversible actions. A low-likelihood, limited, recoverable degraded-UX case is usually non-blocking or a follow-up. Missing validation blocks only when it is a required release gate or leaves a credible high-consequence risk unresolved.
+
+Each finding should include severity, confidence, likelihood, disposition, type (`current defect/regression`, `missing validation`, or `optional improvement`), evidence, impact, and the smallest credible fix direction. Keep severity tied to conditional impact rather than evidence certainty. All blocking dispositions require concrete evidence of a reachable risk or a missing required high-risk release gate: cite a file:line or surface reference plus a short quote or paraphrase of the offending line, state, behavior, or validation gap when available. If reachability cannot be supported, keep the severity conditional, lower confidence, and move the item to assumptions or open questions rather than blocking. Recommend a follow-up ticket only when the work is independently actionable; state why it can wait and give a completion or verification signal. Do not turn low-confidence speculation into ticket backlog. Example finding:
 
 ```text
-[P1][High] api/routes.py:88 - Admin export lacks a server-side role check.
-Type: current regression. Evidence: the handler only checks `is_authenticated`
-before returning customer export data. Impact: any signed-in user can export
-customer data. Fix: enforce the admin permission and add a non-admin 403 test.
+[P1][High confidence][Low likelihood][Blocking] api/routes.py:88 - Admin export
+lacks a server-side role check. Type: current regression. Evidence: the handler
+only checks `is_authenticated` before returning customer export data. Impact:
+any signed-in user who discovers the route can export customer data. Fix:
+enforce the admin permission and add a non-admin 403 test.
 ```
 
 Then include:
 
+- Explicitly say `No blocking findings` when the verdict is not `Block`.
 - Open questions or assumptions.
 - Coverage: target reviewed, spec or intent source, standards sources, and subagents or local passes used.
 - Change summary, only after findings.
@@ -72,7 +94,7 @@ Then include:
 
 ## Subagent Briefs
 
-Ask subagents for concise findings only. Budget each subagent to at most 5 findings and about 400 words. Require the format `[severity][confidence] location/surface - issue`, followed by evidence, impact, and fix direction. Tell subagents to classify each item as a current defect/regression, missing validation, or optional improvement, and to use P0/P1 only when concrete evidence is cited. Do not pass your suspected findings unless asking a subagent to validate a specific concern. Useful briefs:
+Ask subagents for concise findings only. Budget each subagent to at most 5 findings and about 400 words. Require the format `[severity][confidence][likelihood][disposition] location/surface - issue`, followed by evidence, impact, and fix direction. Tell subagents to classify each item as a current defect/regression, missing validation, or optional improvement; keep impact severity separate from confidence, likelihood, and release disposition; and use `Blocking` only when concrete evidence of reachability or a missing required high-risk gate is cited. Do not pass your suspected findings unless asking a subagent to validate a specific concern. Useful briefs:
 
 - Spec and product reviewer: compare the diff with the requested behavior; report missing requirements, wrong behavior, scope creep, and user-facing regressions.
 - Standards and architecture reviewer: compare the diff with repo standards and local patterns; report boundary, contract, data-flow, complexity, or maintainability risks.
@@ -90,3 +112,5 @@ Ask subagents for concise findings only. Budget each subagent to at most 5 findi
 - Security/privacy: auth, permissions, sensitive data, logging, integrations, and abuse cases.
 - Operations/cost: deploy, rollback, observability, retries, queues, external services, and spend.
 - Verification: table, transition, timeline, race, contract, and permission tests where relevant; manual checks, migration checks, release gates, and monitoring.
+- Release disposition: every finding distinguishes impact, evidence confidence, occurrence likelihood, and merge/release blocking status.
+- Tail risk: low likelihood does not downgrade catastrophic, irreversible, cross-tenant, authorization, privacy, data-loss, or financial harm into a non-blocker.

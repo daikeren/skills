@@ -20,10 +20,26 @@
         "Defines assets, actors, trust boundaries, and sensitive data.",
         "Recommends tests or controls for the permission boundary."
       ]
+    },
+    {
+      "id": "low-likelihood-incorrect-charge",
+      "prompt": "Review this payment retry patch. Provider timeouts after request acceptance are uncommon; decide whether the risk blocks release or can be tracked separately.",
+      "expectedSkill": "security-privacy-review",
+      "fixtures": [
+        "low-likelihood-duplicate-charge-diff.md"
+      ],
+      "checks": [
+        "Separates impact severity, evidence confidence, occurrence likelihood, and release disposition.",
+        "Marks the credible duplicate-charge path Blocking despite low likelihood.",
+        "Ties the verdict to the changed idempotency key and absence of reconciliation or refund."
+      ]
     }
   ],
   "traceExpectations": [
     "Data minimization is considered for sensitive flows.",
-    "New regression is distinguished from existing policy."
+    "New regression is distinguished from existing policy.",
+    "Findings separate impact severity, evidence confidence, occurrence likelihood, and release disposition.",
+    "Low-likelihood authorization, privacy, cross-tenant, data-loss, or financial risks remain blocking when supported by concrete evidence.",
+    "The review states an overall verdict and explicitly says when there are no blocking findings."
   ]
 }

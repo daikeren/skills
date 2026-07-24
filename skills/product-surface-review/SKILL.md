@@ -19,18 +19,20 @@ description: Reviews user-facing workflows, empty, loading, error, and recovery 
 
 Lead with findings:
 
-- Severity: user impact and release risk.
+- Severity: user impact if the issue occurs.
 - Confidence: High, Medium, or Low.
+- Likelihood: High, Medium, or Low.
+- Disposition: Blocking, Non-blocking, or Follow-up.
 - Type: current defect/regression, missing validation, or optional improvement.
 - Surface: where the issue appears.
 - Evidence: observed flow, text, state, or code.
 - Impact: user, support, accessibility, trust, privacy, or business consequence.
 - Fix: smallest credible direction.
 
-Use severity:
+Use severity for impact if the issue occurs, independent of release disposition:
 
-- `[P0]` release blocker, active exploit, data loss, widespread outage, or irreversible destructive behavior.
-- `[P1]` likely user-facing regression, authorization/privacy break, migration hazard, or serious operational risk.
+- `[P0]` catastrophic impact such as active compromise, irrecoverable data loss, widespread outage, or irreversible destructive behavior.
+- `[P1]` serious user or business harm, authorization/privacy break, migration corruption, or major operational failure.
 - `[P2]` moderate bug, missing guardrail, important test gap, or maintainability issue with plausible near-term cost.
 - `[P3]` low-risk issue that still affects correctness, clarity, or future review.
 
@@ -38,12 +40,15 @@ Use confidence labels:
 
 - High: directly observed in code, diff, design, or behavior with an unambiguous trace to impact.
 - Medium: supported by concrete evidence, but one assumption remains about runtime behavior, configuration, user path, or intended policy.
-- Low: plausible risk with incomplete evidence; frame as an assumption or open question and avoid P0/P1 severity.
+- Low: plausible risk with incomplete evidence; keep the impact severity conditional and state the assumption or open question that needs validation.
 
-P0/P1 findings require concrete evidence: file:line or surface reference plus a short quote or paraphrase of the offending line, state, or behavior when available. If evidence cannot be cited, lower the severity or mark it as an assumption or open question.
+Label likelihood from how exposed and reachable the user path is, separately from evidence confidence. Assign `Blocking`, `Non-blocking`, or `Follow-up` to say whether the issue must be fixed before merge or release, can ship as-is, or belongs in a separate ticket. Low-likelihood issues remain blocking when they can cause catastrophic, irreversible, cross-tenant, permission, privacy, data-loss, destructive, or incorrect financial outcomes. Limited, recoverable degraded-UX cases with uncommon preconditions are usually non-blocking or follow-up work.
+
+Keep severity tied to conditional impact rather than evidence certainty. Blocking dispositions require concrete evidence of a reachable risk or a missing required high-risk release gate: cite a file:line or surface reference plus a short quote or paraphrase of the offending line, state, behavior, or validation gap when available. If reachability cannot be supported, keep the severity conditional, lower confidence, and move the item to assumptions or open questions rather than blocking. Recommend a follow-up ticket only when it is independently actionable; state why it can wait and how completion will be verified.
 
 Then include:
 
+- Overall verdict: `Block`, `Approve with follow-ups`, or `Approve`; explicitly say `No blocking findings` when appropriate.
 - Workflow summary.
 - Missing states or instrumentation.
 - Release confidence and validation needed.
@@ -51,10 +56,11 @@ Then include:
 Example finding:
 
 ```text
-[P1][High] Checkout coupon field - invalid coupon clears the cart.
-Type: current regression. Evidence: after "Apply" returns "Invalid coupon",
-the cart summary changes to empty. Impact: users lose their order and start over.
-Fix: keep cart state, show inline coupon error, and add an invalid-code state test.
+[P1][High confidence][Medium likelihood][Blocking] Checkout coupon field -
+invalid coupon clears the cart. Type: current regression. Evidence: after
+"Apply" returns "Invalid coupon", the cart summary changes to empty. Impact:
+users lose their order and start over. Fix: keep cart state, show inline coupon
+error, and add an invalid-code state test.
 ```
 
 ## Checklist
@@ -64,3 +70,5 @@ Fix: keep cart state, show inline coupon error, and add an invalid-code state te
 - Accessibility covers keyboard, focus, contrast, screen reader, motion, and touch concerns when relevant.
 - Findings tie to user impact or support burden, not taste alone.
 - Release confidence names missing validation or instrumentation.
+- Findings keep impact, evidence confidence, occurrence likelihood, and merge/release disposition separate.
+- Low-likelihood catastrophic or irreversible outcomes remain blocking.

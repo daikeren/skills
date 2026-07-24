@@ -21,8 +21,10 @@ Return:
 
 - Executive summary: decision, confidence, and top risks.
 - Current architecture: concise map of what exists.
-- Findings: severity, confidence, type, evidence, impact, and smallest credible fix direction.
+- Findings: severity, confidence, likelihood, disposition, type, evidence, impact, and smallest credible fix direction.
 - Open questions: only items that change the decision.
+
+When the target is a concrete change or release, state `Block`, `Approve with follow-ups`, or `Approve`, and explicitly say `No blocking findings` when appropriate.
 
 Include diagrams when useful or requested: Mermaid blocks inline, or an HTML report file when requested.
 
@@ -31,10 +33,10 @@ Return these only when the user requests them or a finding requires structural c
 - Proposed direction: target shape and why it fits.
 - Migration plan: phases, compatibility, rollout, verification, and rollback.
 
-Use severity:
+Use severity for impact if the issue occurs, independent of release disposition:
 
-- `[P0]` release blocker, active exploit, data loss, widespread outage, or irreversible destructive behavior.
-- `[P1]` likely user-facing regression, authorization/privacy break, migration hazard, or serious operational risk.
+- `[P0]` catastrophic impact such as active compromise, irrecoverable data loss, widespread outage, or irreversible destructive behavior.
+- `[P1]` serious user or business harm, authorization/privacy break, migration corruption, or major operational failure.
 - `[P2]` moderate bug, missing guardrail, important test gap, or maintainability issue with plausible near-term cost.
 - `[P3]` low-risk issue that still affects correctness, clarity, or future review.
 
@@ -42,17 +44,20 @@ Use confidence labels:
 
 - High: directly observed in code, diff, design, or behavior with an unambiguous trace to impact.
 - Medium: supported by concrete evidence, but one assumption remains about runtime behavior, configuration, user path, or intended policy.
-- Low: plausible risk with incomplete evidence; frame as an assumption or open question and avoid P0/P1 severity.
+- Low: plausible risk with incomplete evidence; keep the impact severity conditional and state the assumption or open question that needs validation.
 
-P0/P1 findings require concrete evidence: file:line or surface reference plus a short quote or paraphrase of the offending line, state, or behavior when available. If evidence cannot be cited, lower the severity or mark it as an assumption or open question. Classify each finding as `current defect/regression`, `missing validation`, or `optional improvement`.
+Also label likelihood as High, Medium, or Low based on path exposure and required preconditions, then assign `Blocking`, `Non-blocking`, or `Follow-up`. Do not conflate likelihood with evidence confidence or impact severity. Low-likelihood issues still block when failure would be catastrophic, irreversible, difficult to contain or recover from, cross a tenant or permission boundary, corrupt data or migrations, or create incorrect financial effects. Limited and recoverable low-likelihood issues are usually non-blocking or follow-up work.
+
+Keep severity tied to conditional impact rather than evidence certainty. Blocking dispositions require concrete evidence of a reachable risk or a missing required high-risk release gate: cite a file:line or surface reference plus a short quote or paraphrase of the offending line, state, behavior, or validation gap when available. If reachability cannot be supported, keep the severity conditional, lower confidence, and move the item to assumptions or open questions rather than blocking. Classify each finding as `current defect/regression`, `missing validation`, or `optional improvement`. Recommend a separate follow-up ticket only for independently actionable work, and state why it can wait plus the completion signal.
 
 Example finding:
 
 ```text
-[P2][Medium] services/orders.py:142 - Order service reads the payments database directly.
-Type: current defect/regression. Evidence: query uses `payments_db.session`
-instead of the payments client. Impact: schema changes require lockstep deploys.
-Fix: move the queries behind the existing payments client and remove the DB grant.
+[P2][Medium confidence][Medium likelihood][Follow-up] services/orders.py:142 -
+Order service reads the payments database directly. Type: current
+defect/regression. Evidence: query uses `payments_db.session` instead of the
+payments client. Impact: schema changes require lockstep deploys. Fix: move the
+queries behind the existing payments client and remove the DB grant.
 ```
 
 ## Checklist
@@ -60,5 +65,7 @@ Fix: move the queries behind the existing payments client and remove the DB gran
 - Boundaries, data flow, dependencies, trust boundaries, and ownership are mapped.
 - Product value, reliability, security/privacy, cost, operations, and team capacity are evaluated.
 - Findings distinguish current defects from future optional improvements.
+- Findings distinguish impact, evidence confidence, occurrence likelihood, and merge/release disposition.
+- Low-likelihood catastrophic or irreversible tail risks remain blocking.
 - Proposed direction and migration are omitted when current-state findings do not justify structural change.
 - When migration is warranted, its phases preserve compatibility and include rollback, monitoring, and validation checkpoints.

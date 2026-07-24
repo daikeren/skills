@@ -20,10 +20,25 @@
         "Separates user-impact findings from taste.",
         "Calls out trust and support burden."
       ]
+    },
+    {
+      "id": "low-likelihood-recoverable-status",
+      "prompt": "Review this export retry status patch. A late refresh is uncommon; decide whether the issue blocks release or can be tracked separately.",
+      "expectedSkill": "product-surface-review",
+      "fixtures": [
+        "low-likelihood-recoverable-ui-diff.md"
+      ],
+      "checks": [
+        "Separates impact severity, evidence confidence, occurrence likelihood, and release disposition.",
+        "Labels the temporary stale badge Non-blocking or Follow-up because the operation succeeds and the UI self-recovers.",
+        "If recommending a ticket, explains why it can wait and gives a completion or verification signal."
+      ]
     }
   ],
   "traceExpectations": [
-    "Findings include severity, surface, evidence, and recommendation.",
+    "Findings include severity, confidence, likelihood, disposition, surface, evidence, and recommendation.",
+    "Low-likelihood catastrophic or irreversible outcomes remain blocking when supported by concrete evidence.",
+    "The review states an overall verdict and explicitly says when there are no blocking findings.",
     "Accessibility and trust are checked when relevant."
   ]
 }

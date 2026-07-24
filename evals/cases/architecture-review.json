@@ -30,11 +30,27 @@
         "Stops at findings and residual risk when structural change is not justified.",
         "Omits a target shape and migration plan unless a validated finding requires them."
       ]
+    },
+    {
+      "id": "low-likelihood-destructive-migration",
+      "prompt": "Review this migration plan. Late writes from an old worker are uncommon; decide whether the risk blocks release or can be tracked separately.",
+      "expectedSkill": "architecture-review",
+      "fixtures": [
+        "low-likelihood-destructive-migration.md"
+      ],
+      "checks": [
+        "Separates impact severity, evidence confidence, occurrence likelihood, and release disposition.",
+        "Marks the destructive late-write loss risk Blocking despite low likelihood.",
+        "Explains that permanent loss without reconciliation or recovery makes the tail risk release-critical."
+      ]
     }
   ],
   "traceExpectations": [
     "Current-state mapping appears before target-state recommendation.",
     "Target shape and migration appear only when requested or justified by a finding.",
+    "Findings separate impact severity, evidence confidence, occurrence likelihood, and release disposition.",
+    "Low-likelihood catastrophic or irreversible risks remain blocking when supported by concrete evidence.",
+    "Concrete change or release reviews state an overall verdict and explicitly say when there are no blocking findings.",
     "Mermaid or HTML report appears when requested."
   ]
 }

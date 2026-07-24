@@ -21,16 +21,18 @@ Lead with findings:
 
 - Severity: `[P0]`, `[P1]`, `[P2]`, or `[P3]`.
 - Confidence: High, Medium, or Low.
+- Likelihood: High, Medium, or Low.
+- Disposition: Blocking, Non-blocking, or Follow-up.
 - Type: current defect/regression, missing validation, or optional improvement.
 - Boundary: where the trust or data boundary is crossed.
 - Impact: who can do what, or what data is exposed.
 - Evidence: code, design, API, log, or workflow reference.
 - Fix: smallest credible mitigation and verification.
 
-Use severity:
+Use severity for impact if the issue occurs, independent of release disposition:
 
-- `[P0]` release blocker, active exploit, data loss, widespread outage, or irreversible destructive behavior.
-- `[P1]` likely user-facing regression, authorization/privacy break, migration hazard, or serious operational risk.
+- `[P0]` catastrophic impact such as active compromise, irrecoverable data loss, widespread outage, or irreversible destructive behavior.
+- `[P1]` serious user or business harm, authorization/privacy break, migration corruption, or major operational failure.
 - `[P2]` moderate bug, missing guardrail, important test gap, or maintainability issue with plausible near-term cost.
 - `[P3]` low-risk issue that still affects correctness, clarity, or future review.
 
@@ -38,19 +40,22 @@ Use confidence labels:
 
 - High: directly observed in code, diff, design, or behavior with an unambiguous trace to impact.
 - Medium: supported by concrete evidence, but one assumption remains about runtime behavior, configuration, user path, or intended policy.
-- Low: plausible risk with incomplete evidence; frame as an assumption or open question and avoid P0/P1 severity.
+- Low: plausible risk with incomplete evidence; keep the impact severity conditional and state the assumption or open question that needs validation.
 
-P0/P1 findings require concrete evidence: file:line or surface reference plus a short quote or paraphrase of the offending line, state, or behavior when available. If evidence cannot be cited, lower the severity or mark it as an assumption or open question.
+Label likelihood from path exposure and required preconditions; do not use confidence as a proxy for occurrence probability. Assign `Blocking` when the issue must be fixed or explicitly risk-accepted before merge or release, `Non-blocking` when it is actionable but safe to merge, and `Follow-up` when it belongs in a separate ticket. Low likelihood does not make authorization bypass, privacy exposure, cross-tenant access, data loss, incorrect billing, or another high-consequence and hard-to-recover failure non-blocking. Limited, containable, and recoverable low-likelihood hardening is usually non-blocking or follow-up work.
 
-Then include residual risk, assumptions, and tests or controls reviewed.
+Keep severity tied to conditional impact rather than evidence certainty. Blocking dispositions require concrete evidence of a reachable risk or a missing required high-risk release gate: cite a file:line or surface reference plus a short quote or paraphrase of the offending line, state, behavior, or validation gap when available. If reachability cannot be supported, keep the severity conditional, lower confidence, and move the item to assumptions or open questions rather than blocking. Recommend a follow-up ticket only for independently actionable work, stating why it can wait and how completion will be verified.
+
+Then include the overall verdict (`Block`, `Approve with follow-ups`, or `Approve`), residual risk, assumptions, and tests or controls reviewed. Explicitly say `No blocking findings` when appropriate.
 
 Example finding:
 
 ```text
-[P1][High] billing/webhooks.py:41 - Webhook updates billing state before signature verification.
-Type: current regression. Evidence: `mark_paid(payload.invoice_id)` runs before
-any signature check. Impact: a forged public request can mark invoices paid.
-Fix: verify the provider signature, reject stale timestamps, and test unsigned payloads.
+[P1][High confidence][Medium likelihood][Blocking] billing/webhooks.py:41 -
+Webhook updates billing state before signature verification. Type: current
+regression. Evidence: `mark_paid(payload.invoice_id)` runs before any signature
+check. Impact: a forged public request can mark invoices paid. Fix: verify the
+provider signature, reject stale timestamps, and test unsigned payloads.
 ```
 
 ## Checklist
@@ -60,3 +65,5 @@ Fix: verify the provider signature, reject stale timestamps, and test unsigned p
 - Sensitive data collection, logging, retention, export, deletion, and exposure are minimized.
 - Abuse cases include enumeration, replay, injection, privilege escalation, rate limits, and billing abuse when relevant.
 - Tests or controls prove the critical trust boundary.
+- Findings keep impact, evidence confidence, occurrence likelihood, and merge/release disposition separate.
+- Low-likelihood high-consequence security and privacy failures remain blocking.

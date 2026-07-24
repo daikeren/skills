@@ -12,10 +12,10 @@ const resultsDir = path.join(root, "evals", "results");
 const skillRoot = path.join(root, "skills");
 const errors = [];
 const summaries = [];
-const routingCollisions = [];
-const boundaryRoutingCollisions = [];
-const routingMarginWarnings = [];
-const negativeRoutingWarnings = [];
+const positiveRoutingDiagnostics = [];
+const boundaryRoutingDiagnostics = [];
+const routingMarginDiagnostics = [];
+const negativeRoutingDiagnostics = [];
 const ROUTING_MARGIN = 0.04;
 
 const stopWords = new Set([
@@ -238,18 +238,6 @@ function topMatches(prompt, index) {
     }));
 }
 
-function scorePromptForSkill(prompt, skillName) {
-  const words = new Set(
-    prompt
-      .toLowerCase()
-      .replace(/[^a-z0-9 -]/g, " ")
-      .split(/\s+/)
-      .filter(Boolean)
-  );
-  const skillTokens = skillName.split("-");
-  return skillTokens.filter((token) => words.has(token)).length;
-}
-
 function validateFixtureList(rel, item) {
   if (item.fixtures === undefined) {
     return 0;
@@ -279,7 +267,7 @@ function collectRoutingSignals(rel, data, routeIndex) {
     const runnerUp = matches[1];
     const narrowMargin = top && runnerUp ? top.score - runnerUp.score < ROUTING_MARGIN : false;
     if (!top || top.skill !== data.skill) {
-      routingCollisions.push({
+      positiveRoutingDiagnostics.push({
         file: rel,
         skill: data.skill,
         prompt,
@@ -289,7 +277,7 @@ function collectRoutingSignals(rel, data, routeIndex) {
         matches
       });
     } else if (narrowMargin) {
-      routingMarginWarnings.push({
+      routingMarginDiagnostics.push({
         file: rel,
         skill: data.skill,
         prompt,
@@ -302,7 +290,7 @@ function collectRoutingSignals(rel, data, routeIndex) {
   for (const prompt of data.negativePrompts || []) {
     const matches = topMatches(prompt, routeIndex);
     if (matches[0] && matches[0].skill === data.skill) {
-      negativeRoutingWarnings.push({
+      negativeRoutingDiagnostics.push({
         file: rel,
         skill: data.skill,
         prompt,
@@ -318,7 +306,7 @@ function collectRoutingSignals(rel, data, routeIndex) {
     const runnerUp = matches[1];
     const narrowMargin = top && runnerUp ? top.score - runnerUp.score < ROUTING_MARGIN : false;
     if (!top || top.skill !== route.expectedSkill) {
-      boundaryRoutingCollisions.push({
+      boundaryRoutingDiagnostics.push({
         file: rel,
         skill: data.skill,
         expectedSkill: route.expectedSkill,
@@ -327,7 +315,7 @@ function collectRoutingSignals(rel, data, routeIndex) {
         matches
       });
     } else if (narrowMargin) {
-      routingMarginWarnings.push({
+      routingMarginDiagnostics.push({
         file: rel,
         skill: route.expectedSkill,
         prompt: route.prompt,
@@ -373,15 +361,6 @@ function validateCaseFile(file, routeIndex) {
 
   collectRoutingSignals(rel, data, routeIndex);
 
-  const positiveScore = positivePrompts.reduce(
-    (sum, prompt) => sum + scorePromptForSkill(prompt, data.skill),
-    0
-  );
-  const negativeScore = negativePrompts.reduce(
-    (sum, prompt) => sum + scorePromptForSkill(prompt, data.skill),
-    0
-  );
-
   summaries.push({
     file: rel,
     skill: data.skill,
@@ -390,8 +369,7 @@ function validateCaseFile(file, routeIndex) {
     boundaryPrompts: negativeRoutes.length,
     behavioralCases: cases.length,
     traceExpectations: traceExpectations.length,
-    fixtureReferences,
-    keywordRoutingSignal: positiveScore >= negativeScore ? "pass" : "review"
+    fixtureReferences
   });
   return {
     skill: data.skill,
@@ -404,19 +382,34 @@ function formatMatches(matches) {
   return matches.map((match) => `${match.skill}=${match.score.toFixed(3)}`).join(", ");
 }
 
-function printRoutingWarnings() {
-  if (routingMarginWarnings.length === 0 && negativeRoutingWarnings.length === 0) {
+function printRoutingDiagnostics() {
+  const diagnosticCount =
+    positiveRoutingDiagnostics.length
+    + boundaryRoutingDiagnostics.length
+    + routingMarginDiagnostics.length
+    + negativeRoutingDiagnostics.length;
+  if (diagnosticCount === 0) {
     return;
   }
 
   console.warn(
-    `Eval routing warnings: ${routingMarginWarnings.length} narrow positive margin(s), ${negativeRoutingWarnings.length} negative prompt match(es).`
+    "Routing diagnostics (non-blocking heuristic): "
+      + `${positiveRoutingDiagnostics.length} positive mismatch(es), `
+      + `${boundaryRoutingDiagnostics.length} boundary mismatch(es), `
+      + `${routingMarginDiagnostics.length} narrow margin(s), `
+      + `${negativeRoutingDiagnostics.length} negative prompt match(es).`
   );
-  for (const warning of routingMarginWarnings) {
-    console.warn(`- ${warning.file}: ${JSON.stringify(warning.prompt)} -> ${formatMatches(warning.matches)}`);
+  for (const diagnostic of positiveRoutingDiagnostics) {
+    console.warn(`- positive ${diagnostic.file}: ${JSON.stringify(diagnostic.prompt)} -> ${formatMatches(diagnostic.matches)}`);
   }
-  for (const warning of negativeRoutingWarnings) {
-    console.warn(`- ${warning.file}: negative ${JSON.stringify(warning.prompt)} -> ${formatMatches(warning.matches)}`);
+  for (const diagnostic of boundaryRoutingDiagnostics) {
+    console.warn(`- boundary ${diagnostic.file}: ${JSON.stringify(diagnostic.prompt)} -> ${formatMatches(diagnostic.matches)}`);
+  }
+  for (const diagnostic of routingMarginDiagnostics) {
+    console.warn(`- margin ${diagnostic.file}: ${JSON.stringify(diagnostic.prompt)} -> ${formatMatches(diagnostic.matches)}`);
+  }
+  for (const diagnostic of negativeRoutingDiagnostics) {
+    console.warn(`- negative ${diagnostic.file}: ${JSON.stringify(diagnostic.prompt)} -> ${formatMatches(diagnostic.matches)}`);
   }
 }
 
@@ -440,45 +433,43 @@ function main() {
   }
 
   fs.mkdirSync(resultsDir, { recursive: true });
-  if (routingCollisions.length > 0) {
-    fail(`routing: ${routingCollisions.length} positive prompt(s) did not route clearly to their expected skill`);
-  }
-  if (negativeRoutingWarnings.length > 0) {
-    fail(`routing: ${negativeRoutingWarnings.length} negative prompt(s) still routed to the skill they should avoid`);
-  }
-  if (boundaryRoutingCollisions.length > 0) {
-    fail(`routing: ${boundaryRoutingCollisions.length} boundary prompt(s) did not route to the expected sibling skill`);
-  }
+  const routingDiagnosticCount =
+    positiveRoutingDiagnostics.length
+    + boundaryRoutingDiagnostics.length
+    + routingMarginDiagnostics.length
+    + negativeRoutingDiagnostics.length;
 
   const result = {
     generatedAt: new Date().toISOString(),
     status: errors.length === 0 ? "pass" : "fail",
     summaries,
-    routingCollisionSummary: {
+    routingDiagnosticSummary: {
+      status: routingDiagnosticCount === 0 ? "clear" : "review",
+      nonBlocking: true,
       thresholdMargin: ROUTING_MARGIN,
-      positiveCollisionCount: routingCollisions.length,
-      boundaryCollisionCount: boundaryRoutingCollisions.length,
-      positiveMarginWarningCount: routingMarginWarnings.length,
-      negativeWarningCount: negativeRoutingWarnings.length,
-      positiveCollisions: routingCollisions.slice(0, 20),
-      boundaryCollisions: boundaryRoutingCollisions.slice(0, 20),
-      positiveMarginWarnings: routingMarginWarnings.slice(0, 20),
-      negativeWarnings: negativeRoutingWarnings.slice(0, 20)
+      positiveMismatchCount: positiveRoutingDiagnostics.length,
+      boundaryMismatchCount: boundaryRoutingDiagnostics.length,
+      narrowMarginCount: routingMarginDiagnostics.length,
+      negativeMatchCount: negativeRoutingDiagnostics.length,
+      positiveMismatches: positiveRoutingDiagnostics.slice(0, 20),
+      boundaryMismatches: boundaryRoutingDiagnostics.slice(0, 20),
+      narrowMargins: routingMarginDiagnostics.slice(0, 20),
+      negativeMatches: negativeRoutingDiagnostics.slice(0, 20)
     },
     errors
   };
   fs.writeFileSync(path.join(resultsDir, "latest.json"), `${JSON.stringify(result, null, 2)}\n`);
-  printRoutingWarnings();
+  printRoutingDiagnostics();
 
   if (errors.length > 0) {
-    console.error("Eval sanity checks failed:");
+    console.error("Routing diagnostic validation failed:");
     for (const error of errors) {
       console.error(`- ${error}`);
     }
     process.exit(1);
   }
 
-  console.log(`Eval sanity checks passed for ${summaries.length} case files.`);
+  console.log(`Routing diagnostics completed for ${summaries.length} case files; heuristic mismatches are non-blocking.`);
 }
 
 main();

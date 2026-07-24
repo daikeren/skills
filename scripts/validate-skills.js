@@ -21,6 +21,7 @@ const allowedFrontmatterKeys = new Set([
 
 const errors = [];
 const skillDescriptions = [];
+const descriptionCollisionDiagnostics = [];
 const descriptionStopWords = new Set([
   "a",
   "an",
@@ -220,7 +221,7 @@ function cosineSimilarity(left, right) {
   return dot / (Math.sqrt(leftNorm) * Math.sqrt(rightNorm));
 }
 
-function validateDescriptionCollisions() {
+function collectDescriptionCollisionDiagnostics() {
   if (skillDescriptions.length < 2) {
     return;
   }
@@ -237,9 +238,28 @@ function validateDescriptionCollisions() {
       const right = vectors[rightIndex];
       const score = cosineSimilarity(left.vector, right.vector);
       if (score >= DESCRIPTION_COLLISION_THRESHOLD) {
-        fail(`${left.file} and ${right.file}: descriptions are too similar (${score.toFixed(2)} >= ${DESCRIPTION_COLLISION_THRESHOLD}); make trigger language more distinct`);
+        descriptionCollisionDiagnostics.push({
+          left: left.file,
+          right: right.file,
+          score: Number(score.toFixed(2))
+        });
       }
     }
+  }
+}
+
+function printDescriptionCollisionDiagnostics() {
+  if (descriptionCollisionDiagnostics.length === 0) {
+    return;
+  }
+
+  console.warn(
+    `Description diagnostics (non-blocking heuristic): ${descriptionCollisionDiagnostics.length} pair(s) at or above ${DESCRIPTION_COLLISION_THRESHOLD}.`
+  );
+  for (const diagnostic of descriptionCollisionDiagnostics) {
+    console.warn(
+      `- ${diagnostic.left} and ${diagnostic.right}: similarity ${diagnostic.score.toFixed(2)}`
+    );
   }
 }
 
@@ -496,7 +516,7 @@ function main() {
     for (const dirent of dirents) {
       validateSkillDirectory(dirent);
     }
-    validateDescriptionCollisions();
+    collectDescriptionCollisionDiagnostics();
   }
 
   if (!fs.existsSync(commandRoot)) {
@@ -505,6 +525,7 @@ function main() {
 
   validateReferences();
   validateEvalCases();
+  printDescriptionCollisionDiagnostics();
 
   if (errors.length > 0) {
     console.error("Skill validation failed:");

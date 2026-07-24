@@ -117,12 +117,14 @@ Run:
 
 ```bash
 npm run validate
-npm run eval
+npm run diagnose:routing
 ```
 
-The validators check skill frontmatter, kebab-case names, description specificity, required body sections, forbidden per-skill READMEs, reference files, manifests, command wrapper parity, eval case JSON shape, and one-to-one coverage between skills and eval datasets. The eval runner performs deterministic routing and sanity checks, reports routing warnings in the terminal, and writes ignored generated output under `evals/results/`.
+Validation errors are the deterministic hard gate. The validators check skill frontmatter, kebab-case names, description specificity, required body sections, forbidden per-skill READMEs, reference files, manifests, command wrapper parity, eval case JSON shape, fixture safety, and one-to-one coverage between skills and eval datasets.
 
-For opt-in behavioral smoke tests against a real agent:
+The routing diagnostic compares prompts with skill descriptions using a deterministic lexical heuristic. Positive, negative, boundary, and margin mismatches are non-blocking authoring signals. Validation also reports pairwise description-similarity as a non-blocking diagnostic. These heuristics are not the routing mechanism used by real agents. The routing command writes ignored generated output under `evals/results/`. `npm run eval` remains as a compatibility alias for the same diagnostic.
+
+For opt-in behavioral evaluation against a real agent:
 
 ```bash
 LIVE_EVAL_AGENT=codex npm run eval:live

@@ -17,7 +17,8 @@ Run:
 
 ```bash
 npm run validate
-npm run eval
+npm run diagnose:routing
 ```
 
 The repo intentionally uses zero runtime dependencies for validation scripts.
+Routing diagnostics are lexical authoring signals, not correctness gates; heuristic mismatches must remain non-blocking.

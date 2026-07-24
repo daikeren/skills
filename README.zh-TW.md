@@ -109,12 +109,14 @@ Runtime-essential guidance 應該放在所屬 skill 的目錄，或直接寫進�
 
 ```bash
 npm run validate
-npm run eval
+npm run diagnose:routing
 ```
 
-Validators 會檢查 skill frontmatter、kebab-case names、description specificity、必要的 body sections、禁止出現的 per-skill READMEs、reference files、manifests、command wrapper parity、eval case JSON shape，以及 skills 與 eval datasets 是否一對一完整覆蓋。Eval runner 會執行 deterministic routing 與 sanity checks，在 terminal 回報 routing warnings，並把產生的結果寫入已被 ignore 的 `evals/results/`。
+Validation errors 是 deterministic hard gate。Validators 會檢查 skill frontmatter、kebab-case names、description specificity、必要的 body sections、禁止出現的 per-skill READMEs、reference files、manifests、command wrapper parity、eval case JSON shape、fixture safety，以及 skills 與 eval datasets 是否一對一完整覆蓋。
 
-若要對真正的 agent 執行 opt-in behavioral smoke tests：
+Routing diagnostic 會用 deterministic lexical heuristic 比較 prompts 與 skill descriptions。Positive、negative、boundary 與 margin mismatches 都是 non-blocking authoring signals；validation 也會把 pairwise description-similarity 當成 non-blocking diagnostic 回報。這些 heuristics 不是真實 agents 使用的 routing mechanism。Routing command 會把產生的結果寫入已被 ignore 的 `evals/results/`。`npm run eval` 會保留為相同 diagnostic 的 compatibility alias。
+
+若要對真正的 agent 執行 opt-in behavioral evaluation：
 
 ```bash
 LIVE_EVAL_AGENT=codex npm run eval:live

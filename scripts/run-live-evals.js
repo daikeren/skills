@@ -33,6 +33,7 @@ const commandOverride = process.env.LIVE_EVAL_COMMAND;
 const judgeCommandOverride = process.env.LIVE_EVAL_JUDGE_COMMAND;
 const caseFilter = process.env.LIVE_EVAL_CASES;
 const DEFAULT_COMMAND_TIMEOUT_MS = 5 * 60 * 1000;
+const DEFAULT_CONCURRENCY = 4;
 const DEFAULT_MAX_ARTIFACT_BYTES = 512 * 1024;
 const MAX_COMMAND_OUTPUT_BYTES = 10 * 1024 * 1024;
 const MAX_ARTIFACT_FILES = 20;
@@ -43,8 +44,8 @@ const activeCodexHomes = new Set();
 let commandTimeoutMs = DEFAULT_COMMAND_TIMEOUT_MS;
 let maxFixtureBytes = DEFAULT_MAX_FIXTURE_BYTES;
 let maxArtifactBytes = DEFAULT_MAX_ARTIFACT_BYTES;
-let temporaryCodexHome = null;
 let compareBaseline = false;
+let concurrency = DEFAULT_CONCURRENCY;
 
 function usage() {
   console.error("Set LIVE_EVAL_AGENT=codex or LIVE_EVAL_AGENT=claude-code.");
@@ -52,7 +53,7 @@ function usage() {
   console.error("Optional: set LIVE_EVAL_JUDGE_COMMAND to use a separate JSON judge command. The judge prompt is sent through stdin.");
   console.error("Optional: set LIVE_EVAL_CASES to a comma-separated list of skill/case IDs.");
   console.error("Optional: set LIVE_EVAL_COMPARE_BASELINE=1 to compare each selected case with a without-skill baseline.");
-  console.error("Optional: set LIVE_EVAL_TIMEOUT_MS, LIVE_EVAL_MAX_FIXTURE_BYTES, or LIVE_EVAL_MAX_ARTIFACT_BYTES to positive integers.");
+  console.error("Optional: set LIVE_EVAL_CONCURRENCY, LIVE_EVAL_TIMEOUT_MS, LIVE_EVAL_MAX_FIXTURE_BYTES, or LIVE_EVAL_MAX_ARTIFACT_BYTES to positive integers.");
 }
 
 function readJson(file) {
@@ -103,7 +104,59 @@ function configureLimits() {
   commandTimeoutMs = positiveIntegerEnv("LIVE_EVAL_TIMEOUT_MS", DEFAULT_COMMAND_TIMEOUT_MS);
   maxFixtureBytes = positiveIntegerEnv("LIVE_EVAL_MAX_FIXTURE_BYTES", DEFAULT_MAX_FIXTURE_BYTES);
   maxArtifactBytes = positiveIntegerEnv("LIVE_EVAL_MAX_ARTIFACT_BYTES", DEFAULT_MAX_ARTIFACT_BYTES);
+  concurrency = positiveIntegerEnv("LIVE_EVAL_CONCURRENCY", DEFAULT_CONCURRENCY);
   compareBaseline = booleanEnv("LIVE_EVAL_COMPARE_BASELINE", false);
+}
+
+async function mapWithConcurrency(items, limit, worker) {
+  if (!Number.isSafeInteger(limit) || limit <= 0) {
+    throw new Error("concurrency limit must be a positive integer");
+  }
+  const results = new Array(items.length);
+  let nextIndex = 0;
+
+  async function runWorker() {
+    while (true) {
+      const index = nextIndex;
+      nextIndex += 1;
+      if (index >= items.length) return;
+      results[index] = await worker(items[index], index);
+    }
+  }
+
+  const workerCount = Math.min(limit, items.length);
+  await Promise.all(Array.from({ length: workerCount }, () => runWorker()));
+  return results;
+}
+
+function formatProgressLine({ completed, total, key, phase, status, durationMs, detail }) {
+  const fields = [
+    `[live-eval ${completed}/${total}]`,
+    key,
+    `${phase}:${status}`
+  ];
+  if (Number.isFinite(durationMs)) fields.push(`${Math.round(durationMs)}ms`);
+  if (detail) fields.push(detail);
+  return fields.join(" ");
+}
+
+function createProgressReporter(total, stream = process.stderr) {
+  let completed = 0;
+  return {
+    phase(key, phase, status, details = {}) {
+      stream.write(`${formatProgressLine({ completed, total, key, phase, status, ...details })}\n`);
+    },
+    complete(key, result, durationMs) {
+      completed += 1;
+      const comparisonValue = result.comparison && result.comparison.skillValue;
+      const detail = [
+        `status=${result.status}`,
+        `contract=${result.judgmentStatus}`,
+        comparisonValue ? `value=${comparisonValue}` : null
+      ].filter(Boolean).join(" ");
+      stream.write(`${formatProgressLine({ completed, total, key, phase: "case", status: "complete", durationMs, detail })}\n`);
+    }
+  };
 }
 
 function parseCaseFilter(value) {
@@ -467,7 +520,7 @@ function resolveCommandOverride(command) {
   return command;
 }
 
-function commandFor(prompt, role = "agent") {
+function commandFor(prompt, role = "agent", codexHome = null) {
   if (role === "judge" && judgeCommandOverride) {
     return { command: resolveCommandOverride(judgeCommandOverride), args: [], input: prompt, source: "LIVE_EVAL_JUDGE_COMMAND" };
   }
@@ -487,7 +540,7 @@ function commandFor(prompt, role = "agent") {
     return {
       command: "codex",
       args: ["exec", "--skip-git-repo-check", "--ephemeral", "--sandbox", "workspace-write", "--json", "-"],
-      env: temporaryCodexHome ? { CODEX_HOME: temporaryCodexHome } : undefined,
+      env: codexHome ? { CODEX_HOME: codexHome } : undefined,
       input: prompt,
       outputFormat: "codex-jsonl",
       source: "LIVE_EVAL_AGENT"
@@ -874,10 +927,10 @@ function normalizeJudgeChecks(parsed, expectations, evidenceCorpus) {
   };
 }
 
-async function judgeOutput(data, item, fixtures, artifacts, output, expectations) {
+async function judgeOutput(data, item, fixtures, artifacts, output, expectations, codexHome = null) {
   const renderedArtifacts = renderArtifacts(artifacts);
   const prompt = buildJudgePrompt(data, item, fixtures, artifacts, output, expectations);
-  const cmd = commandFor(prompt, "judge");
+  const cmd = commandFor(prompt, "judge", codexHome);
   let workspace;
   let result;
   try {
@@ -1016,9 +1069,9 @@ function normalizeComparison(parsed) {
   };
 }
 
-async function judgeComparison(data, item, fixtures, candidate, baseline) {
+async function judgeComparison(data, item, fixtures, candidate, baseline, codexHome = null) {
   const prompt = buildComparisonJudgePrompt(data, item, fixtures, candidate, baseline);
-  const cmd = commandFor(prompt, "judge");
+  const cmd = commandFor(prompt, "judge", codexHome);
   let workspace;
   let result;
   try {
@@ -1068,12 +1121,12 @@ async function judgeComparison(data, item, fixtures, candidate, baseline) {
   };
 }
 
-async function runWithoutSkillBaseline(item, fixtures) {
+async function runWithoutSkillBaseline(item, fixtures, codexHome = null) {
   let caseWorkspace;
   try {
     caseWorkspace = createCaseWorkspace({ withoutSkills: true });
     const prompt = buildBaselinePrompt(item, fixtures, caseWorkspace.artifactDir);
-    const cmd = commandFor(prompt);
+    const cmd = commandFor(prompt, "agent", codexHome);
     let result = await runCommand(cmd, caseWorkspace.workspace);
     result = normalizeCommandResult(result, cmd);
     if (result.status !== 0) {
@@ -1129,7 +1182,25 @@ function judgmentStatus(checks) {
   return "pass";
 }
 
-async function runCase(data, item) {
+function runtimeFailedCase(data, item, error) {
+  const expectations = expectationsFor(data, item);
+  return {
+    skill: data.skill,
+    id: item.id,
+    status: "workspace-failed",
+    judgmentStatus: "review",
+    command: null,
+    artifacts: [],
+    fixtures: [],
+    judge: { status: "not-run", reason: error.message },
+    checks: reviewChecks(expectations, error.message),
+    comparison: compareBaseline ? { enabled: true, status: "not-run", skillValue: "review" } : { enabled: false },
+    outputPreview: ""
+  };
+}
+
+async function runCase(data, item, options = {}) {
+  const { codexHome = null, onPhase = () => {} } = options;
   let caseWorkspace;
   try {
     caseWorkspace = createCaseWorkspace();
@@ -1171,9 +1242,14 @@ async function runCase(data, item) {
 
     const expectations = expectationsFor(data, item);
     const prompt = buildPrompt(data, item, fixtures, caseWorkspace.workspace, caseWorkspace.artifactDir);
-    const cmd = commandFor(prompt);
+    const cmd = commandFor(prompt, "agent", codexHome);
+    onPhase("candidate", "start");
     let result = await runCommand(cmd, caseWorkspace.workspace);
     result = normalizeCommandResult(result, cmd);
+    onPhase("candidate", "complete", {
+      durationMs: result.durationMs,
+      detail: `status=${result.status === 0 ? "completed" : "command-failed"}`
+    });
     const output = result.output;
 
     if (result.status !== 0) {
@@ -1213,7 +1289,13 @@ async function runCase(data, item) {
       };
     }
 
-    const judged = await judgeOutput(data, item, fixtures, artifacts, output, expectations);
+    onPhase("contract-judge", "start");
+    const contractJudgeStartedAt = Date.now();
+    const judged = await judgeOutput(data, item, fixtures, artifacts, output, expectations, codexHome);
+    onPhase("contract-judge", "complete", {
+      durationMs: Date.now() - contractJudgeStartedAt,
+      detail: `status=${judged.judge.status}`
+    });
     const candidate = {
       output,
       artifacts,
@@ -1221,9 +1303,20 @@ async function runCase(data, item) {
     };
     let comparison = { enabled: false };
     if (compareBaseline) {
-      const baseline = await runWithoutSkillBaseline(item, fixtures);
+      onPhase("baseline", "start");
+      const baseline = await runWithoutSkillBaseline(item, fixtures, codexHome);
+      onPhase("baseline", "complete", {
+        durationMs: baseline.measurements && baseline.measurements.durationMs,
+        detail: `status=${baseline.status}`
+      });
       if (baseline.status === "completed") {
-        const compared = await judgeComparison(data, item, fixtures, candidate, baseline);
+        onPhase("comparison-judge", "start");
+        const comparisonJudgeStartedAt = Date.now();
+        const compared = await judgeComparison(data, item, fixtures, candidate, baseline, codexHome);
+        onPhase("comparison-judge", "complete", {
+          durationMs: Date.now() - comparisonJudgeStartedAt,
+          detail: `status=${compared.status} value=${compared.skillValue}`
+        });
         comparison = {
           enabled: true,
           status: compared.status,
@@ -1344,24 +1437,43 @@ async function main() {
     process.exit(1);
   }
 
-  const results = [];
+  const runStartedAt = Date.now();
+  const progress = createProgressReporter(selectedCases.length);
   const removeSignalCleanup = installSignalCleanup(() => {
     terminateActiveProcessTrees();
     cleanupActiveTemporaryResources();
-    temporaryCodexHome = null;
   });
+  let results;
   try {
-    if (agent === "codex" && !commandOverride) {
-      temporaryCodexHome = createTemporaryCodexHome();
-    }
-    for (const { data, item } of selectedCases) {
-      results.push(await runCase(data, item));
-    }
+    const workerCount = Math.min(concurrency, selectedCases.length);
+    console.error(`Live eval starting ${selectedCases.length} case(s) with concurrency ${workerCount}.`);
+    results = await mapWithConcurrency(selectedCases, concurrency, async ({ data, item }) => {
+      const key = `${data.skill}/${item.id}`;
+      const startedAt = Date.now();
+      let codexHome;
+      progress.phase(key, "case", "start");
+      try {
+        if (agent === "codex" && !commandOverride) {
+          codexHome = createTemporaryCodexHome();
+        }
+        const result = await runCase(data, item, {
+          codexHome,
+          onPhase: (phase, status, details) => progress.phase(key, phase, status, details)
+        });
+        progress.complete(key, result, Date.now() - startedAt);
+        return result;
+      } catch (error) {
+        const result = runtimeFailedCase(data, item, error);
+        progress.complete(key, result, Date.now() - startedAt);
+        return result;
+      } finally {
+        cleanupTemporaryCodexHome(codexHome);
+      }
+    });
   } finally {
     removeSignalCleanup();
     terminateActiveProcessTrees();
     cleanupActiveTemporaryResources();
-    temporaryCodexHome = null;
   }
 
   fs.mkdirSync(resultsDir, { recursive: true });
@@ -1369,6 +1481,8 @@ async function main() {
     generatedAt: new Date().toISOString(),
     agent: agent || "custom",
     comparisonEnabled: compareBaseline,
+    concurrency: Math.min(concurrency, selectedCases.length),
+    durationMs: Date.now() - runStartedAt,
     results
   };
   fs.writeFileSync(path.join(resultsDir, "live-latest.json"), `${JSON.stringify(out, null, 2)}\n`);
@@ -1424,7 +1538,9 @@ module.exports = {
   evidenceAppearsInOutput,
   evidenceList,
   expectationsFor,
+  formatProgressLine,
   installSignalCleanup,
+  mapWithConcurrency,
   measurementsFor,
   normalizeCommandResult,
   normalizeComparison,

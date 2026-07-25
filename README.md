@@ -148,11 +148,20 @@ LIVE_EVAL_COMPARE_BASELINE=1 \
 npm run eval:live
 ```
 
+Cases run with bounded concurrency `4` by default. Override it when local or provider limits require a different value:
+
+```bash
+LIVE_EVAL_AGENT=codex \
+LIVE_EVAL_COMPARE_BASELINE=1 \
+LIVE_EVAL_CONCURRENCY=2 \
+npm run eval:live
+```
+
 Contract checks remain the correctness gate: they verify that the skill follows its intended behavior. A genuinely conditional expectation may opt in to `not-applicable` with `{ "text": "When ...", "allowsNotApplicable": true }`; when its condition does not hold, this counts as a completed check rather than an ambiguous review. Plain strings never allow `not-applicable`, so exhaustive branches and missing behavior or evidence cannot be skipped accidentally. Comparative mode additionally runs the same task against a matched repository snapshot with skill runtime surfaces removed and an explicit no-skill prompt, then judges task success, missed risks, and unnecessary steps while recording elapsed time, output size, artifacts, and harness-observable tool calls. Codex also uses an isolated temporary home, so its baseline cannot discover installed user skills; other harnesses are labeled as prompt-isolated when their global skill home cannot be safely replaced. Cost alone does not determine the winner when extra work produces material quality or risk reduction. Comparative results are diagnostics rather than a hard gate while model and harness baselines remain variable; use repeated targeted runs before changing a skill contract.
 
 Codex runs use JSONL telemetry to count completed command, file-change, MCP, and web-search actions. A harness that does not expose reliable tool-call telemetry records `null` instead of estimating it. A single elapsed-time sample is directional evidence, not a benchmark.
 
-The live runner executes each candidate case in a disposable copy of the published repository surfaces, runs the judge from a separate empty temporary directory, rejects unsafe fixture paths and symbolic links, and applies per-command timeouts with process-group cleanup. Codex runs use a private temporary home containing only the authentication file; on normal exit, `SIGHUP`, `SIGINT`, or `SIGTERM`, the runner removes active process trees, temporary workspaces, and the credential copy. A hard kill or host failure can still leave temporary credential residue that must be removed manually. The runner writes `evals/results/live-latest.json` in the source checkout. Keep it out of the fast CI gate because it depends on local agent installation, credentials, model availability, and cost.
+The live runner executes different cases concurrently while keeping the phases inside each case ordered. It logs case and phase start/completion, elapsed time, and aggregate progress to stderr without echoing prompts or fixture contents. Each concurrent candidate uses its own disposable repository copy and, for Codex, its own private temporary home containing only the authentication file; judges run from separate empty temporary directories. The runner rejects unsafe fixture paths and symbolic links and applies per-command timeouts with process-group cleanup. On normal exit, `SIGHUP`, `SIGINT`, or `SIGTERM`, it removes active process trees, temporary workspaces, and credential copies. A hard kill or host failure can still leave temporary credential residue that must be removed manually. The runner writes ordered results plus concurrency and total duration to `evals/results/live-latest.json` in the source checkout. Keep it out of the fast CI gate because it depends on local agent installation, credentials, model availability, and cost.
 
 ## Daily Flow
 

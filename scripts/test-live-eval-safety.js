@@ -22,8 +22,10 @@ const {
   evidenceAppearsInOutput,
   evidenceList,
   expectationsFor,
+  formatProgressLine,
   installSignalCleanup,
   judgmentStatus,
+  mapWithConcurrency,
   measurementsFor,
   normalizeCommandResult,
   normalizeComparison,
@@ -48,6 +50,31 @@ assert.deepEqual(
   ]
 );
 assert.throws(() => parseCaseFilter("implement-change"), /skill\/case IDs/);
+assert.match(
+  formatProgressLine({
+    completed: 2,
+    total: 5,
+    key: "example-skill/example-case",
+    phase: "baseline",
+    status: "complete",
+    durationMs: 1234,
+    detail: "status=completed"
+  }),
+  /^\[live-eval 2\/5\] example-skill\/example-case baseline:complete 1234ms status=completed$/
+);
+
+let activeWorkers = 0;
+let maxActiveWorkers = 0;
+const scheduledResults = await mapWithConcurrency([30, 5, 20, 1], 2, async (delay, index) => {
+  activeWorkers += 1;
+  maxActiveWorkers = Math.max(maxActiveWorkers, activeWorkers);
+  await new Promise((resolve) => setTimeout(resolve, delay));
+  activeWorkers -= 1;
+  return `result-${index}`;
+});
+assert.equal(maxActiveWorkers, 2);
+assert.deepEqual(scheduledResults, ["result-0", "result-1", "result-2", "result-3"]);
+await assert.rejects(() => mapWithConcurrency([1], 0, async () => null), /positive integer/);
 const selectedCases = selectCases(
   [
     {
@@ -428,8 +455,9 @@ try {
         ...process.env,
         LIVE_EVAL_COMMAND: mockRunner,
         LIVE_EVAL_JUDGE_COMMAND: mockRunner,
-        LIVE_EVAL_CASES: "route-work/direct-low-risk-path",
+        LIVE_EVAL_CASES: "route-work/direct-low-risk-path,understand-change/small-change-uses-chat",
         LIVE_EVAL_COMPARE_BASELINE: "1",
+        LIVE_EVAL_CONCURRENCY: "2",
         LIVE_EVAL_TIMEOUT_MS: "1000"
       }
     }
@@ -439,15 +467,26 @@ try {
     0,
     `comparative runner failed:\n${comparativeResult.stdout || ""}\n${comparativeResult.stderr || ""}`
   );
+  assert.match(comparativeResult.stderr, /Live eval starting 2 case\(s\) with concurrency 2\./);
+  assert.match(comparativeResult.stderr, /route-work\/direct-low-risk-path candidate:start/);
+  assert.match(comparativeResult.stderr, /understand-change\/small-change-uses-chat baseline:complete/);
+  assert.match(comparativeResult.stderr, /contract-judge:complete \d+ms status=completed/);
+  assert.match(comparativeResult.stderr, /comparison-judge:complete \d+ms status=completed value=neutral/);
+  assert.match(comparativeResult.stderr, /\[live-eval 2\/2\].*case:complete/);
   const comparativeOutput = JSON.parse(
     fs.readFileSync(path.join(comparativeWorkspace.workspace, "evals", "results", "live-latest.json"), "utf8")
   );
   assert.equal(comparativeOutput.comparisonEnabled, true);
-  assert.equal(comparativeOutput.results.length, 1);
-  assert.equal(comparativeOutput.results[0].judgmentStatus, "pass");
-  assert.equal(comparativeOutput.results[0].comparison.status, "completed");
-  assert.equal(comparativeOutput.results[0].comparison.skillValue, "neutral");
-  assert.equal(comparativeOutput.results[0].comparison.baseline.status, "completed");
+  assert.equal(comparativeOutput.concurrency, 2);
+  assert.equal(comparativeOutput.results.length, 2);
+  assert.deepEqual(
+    comparativeOutput.results.map((item) => `${item.skill}/${item.id}`),
+    ["route-work/direct-low-risk-path", "understand-change/small-change-uses-chat"]
+  );
+  assert.ok(comparativeOutput.results.every((item) => item.judgmentStatus === "pass"));
+  assert.ok(comparativeOutput.results.every((item) => item.comparison.status === "completed"));
+  assert.ok(comparativeOutput.results.every((item) => item.comparison.skillValue === "neutral"));
+  assert.ok(comparativeOutput.results.every((item) => item.comparison.baseline.status === "completed"));
   assert.equal(
     comparativeOutput.results[0].comparison.baseline.isolation,
     "matched-workspace-and-no-skill-prompt"

@@ -21,6 +21,7 @@ description: Performs findings-first review of code diffs, PRs, patches, or unco
    - Security and privacy: auth, permissions, sensitive data, logging, secrets, integrations, public APIs, billing/admin surfaces, and abuse cases.
    - Operations and verification: migrations, rollout, rollback, observability, queues, retries, external services, cost, tests, release gates, and monitoring.
    - State and temporal correctness, when relevant: lifecycle precedence, event ordering, stale ownership, canonical identity, previous episodes, alternate matching paths, partial data, and whether fallbacks fail safely.
+   For agent discoverability, inspect only newly introduced or changed cross-file symbol names. Report names that are misleading, overly generic, or inconsistent with the repository's established term for the same concept when the ambiguity is concrete. Do not expand this check into file layout, types, comments, or untouched names, and do not request broad renames. Treat naming-only findings as non-blocking unless concrete correctness or compatibility impact supports a stronger disposition.
 10. If subagents are unavailable or the diff is tiny, run the same lenses as isolated local passes and note that fallback briefly after the findings.
 11. Before final aggregation, check relevant repo-local context or lessons if a lightweight store is evident, such as review notes, project memory, ADRs, or a public lessons log. Apply only lessons that match the current review target and are supported by repo evidence; do not block if no store exists.
 12. Aggregate the reports. Verify each candidate finding against the code or diff, deduplicate overlaps, drop speculative issues that lack impact, classify missing validation separately from current defects, and rerank blocking findings before non-blocking findings, then by severity. Unlike single-axis review, `review-code` should integrate the lenses into one findings-first risk order while preserving useful lens context.
@@ -107,6 +108,7 @@ Ask subagents for concise findings only. Budget each subagent to at most 5 findi
 - Spec fit: requested behavior, missing requirements, scope creep, and compatibility.
 - Product: workflow, states, user trust, accessibility, business fit, and support burden.
 - Architecture: boundaries, contracts, data flow, dependency weight, complexity, and maintenance.
+- Symbol naming: newly introduced or changed cross-file symbols are not misleading, overly generic, or inconsistent with established domain terms; naming-only findings remain narrow and non-blocking without concrete correctness or compatibility impact.
 - State/identity: precedence, canonical source, episode boundary, event order, async ownership, and alternate matching paths.
 - Fallbacks: prior-episode and partial-data behavior; uncertainty must not become consequential success.
 - Security/privacy: auth, permissions, sensitive data, logging, integrations, and abuse cases.

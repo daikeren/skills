@@ -15,12 +15,13 @@ description: Guides coding work to stay small, reversible, idiomatic, and verifi
 6. Run the stateful-change checkpoint before editing when correctness depends on cross-state precedence, temporal ordering, multiple async owners or data sources, several identity paths or representations, or a fallback that can authorize, clear, charge, delete, publish, or make another consequential decision. Keep the checkpoint compact; do not force it onto routine changes whose local loading, error, and success states already follow an established pattern.
 7. If a fix-review loop produces a second confirmed issue from the same state, identity, ordering, or fallback invariant, stop applying isolated patches. Reconstruct the invariant surface, event timeline, and sibling paths before choosing the next fix.
 8. Keep the slice small and reversible. Reuse existing helpers, services, hooks, feature flags, settings, components, and test styles.
-9. Protect user work. Treat unexpected diffs as user-authored and work around them unless the user asks otherwise.
-10. Human owns product, policy, rollout, and irreversible decisions; agent owns implementation facts, diffs, and evidence. If the user is absent, proceed only with explicitly recorded low-risk assumptions.
-11. Update contracts end to end when behavior crosses layers: schemas, APIs, service logic, hooks/types, UI states, docs, and tests.
-12. Run the evidence-amplification checkpoint when a material implementation claim remains poorly observable with existing checks.
-13. Verify the riskiest behavior with the smallest meaningful command or manual check. Record the exact command or manual check invocation and the result summary; include relevant output on failure or surprising pass. If verification cannot run, explain the blocker.
-14. Before finalizing, run the scope-fit checkpoint, then review the retained diff for missing tests, migration hazards, permissions, data exposure, and docs/i18n gaps.
+9. Make changed code easy to retrieve and understand with repository search. Prefer the shortest locally idiomatic names that search uniquely, adding domain terms to symbols, files, and paths only as needed; use one spelling per concept; make contracts and types precise enough to use without opening implementations; and place explanations of non-obvious constraints beside the definitions readers will find. Do not broaden the change or rename stable interfaces solely for agent discoverability.
+10. Protect user work. Treat unexpected diffs as user-authored and work around them unless the user asks otherwise.
+11. Human owns product, policy, rollout, and irreversible decisions; agent owns implementation facts, diffs, and evidence. If the user is absent, proceed only with explicitly recorded low-risk assumptions.
+12. Update contracts end to end when behavior crosses layers: schemas, APIs, service logic, hooks/types, UI states, docs, and tests.
+13. Run the evidence-amplification checkpoint when a material implementation claim remains poorly observable with existing checks.
+14. Verify the riskiest behavior with the smallest meaningful command or manual check. Record the exact command or manual check invocation and the result summary; include relevant output on failure or surprising pass. If verification cannot run, explain the blocker.
+15. Before finalizing, run the scope-fit checkpoint, then review the retained diff for missing tests, migration hazards, permissions, data exposure, and docs/i18n gaps.
 
 ## Stateful-Change Checkpoint
 
@@ -82,6 +83,7 @@ Residual risk: no load test on the new unique index.
 - Local instructions and repository state were checked before editing.
 - Tooling was detected from repository evidence.
 - Existing helpers, services, patterns, settings, flags, and tests were reused where practical.
+- Changed code uses the shortest locally idiomatic names that search uniquely, precise contracts, and definition-adjacent explanations without unnecessary renames or scope expansion.
 - Stateful or integration-heavy changes named state precedence, canonical identity, event order, and fallback semantics before editing.
 - A second same-family finding triggered an invariant-level reassessment instead of another isolated patch.
 - Material claims that existing checks could not settle used an isolated evidence-amplification probe or recorded why one was unnecessary.

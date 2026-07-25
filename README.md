@@ -214,6 +214,7 @@ This pack borrows the shape, not the bulk, of several public repos:
 - `obra/superpowers`: evidence-driven workflows, cross-harness packaging, and verification before claiming completion.
 - `everyinc/compound-engineering-plugin`: planning, review, and captured learning as compounding engineering infrastructure.
 - `addyosmani/agent-skills`: lifecycle commands, reference checklists, and structural/eval gates.
+- `humanlayer/advanced-context-engineering-for-coding-agents`: intentional context compaction, high-leverage human alignment, and compact program-shape decisions before complex vertical slices.
 
 The implementation intentionally stays lighter than a full methodology framework.
 

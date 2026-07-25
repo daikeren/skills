@@ -11,15 +11,16 @@ description: Guides coding work to stay small, reversible, idiomatic, and verifi
 2. Check repo-local context, lessons, glossary, ADRs, or similar stores when prior decisions could affect implementation.
 3. Detect tooling from repo evidence: package files, lockfiles, Makefiles, CI, docs, scripts, and local commands. Do not assume a framework, package manager, or host.
 4. Scale depth to risk. Low-risk, solo, reversible work can use a lightweight path; cross-functional, irreversible, sensitive-data, migration, security, or compliance work needs a standard or deeper plan, rollout, and verification.
-5. Run the stateful-change checkpoint before editing when correctness depends on cross-state precedence, temporal ordering, multiple async owners or data sources, several identity paths or representations, or a fallback that can authorize, clear, charge, delete, publish, or make another consequential decision. Keep the checkpoint compact; do not force it onto routine changes whose local loading, error, and success states already follow an established pattern.
-6. If a fix-review loop produces a second confirmed issue from the same state, identity, ordering, or fallback invariant, stop applying isolated patches. Reconstruct the invariant surface, event timeline, and sibling paths before choosing the next fix.
-7. Keep the slice small and reversible. Reuse existing helpers, services, hooks, feature flags, settings, components, and test styles.
-8. Protect user work. Treat unexpected diffs as user-authored and work around them unless the user asks otherwise.
-9. Human owns product, policy, rollout, and irreversible decisions; agent owns implementation facts, diffs, and evidence. If the user is absent, proceed only with explicitly recorded low-risk assumptions.
-10. Update contracts end to end when behavior crosses layers: schemas, APIs, service logic, hooks/types, UI states, docs, and tests.
-11. Run the evidence-amplification checkpoint when a material implementation claim remains poorly observable with existing checks.
-12. Verify the riskiest behavior with the smallest meaningful command or manual check. Record the exact command or manual check invocation and the result summary; include relevant output on failure or surprising pass. If verification cannot run, explain the blocker.
-13. Before finalizing, run the scope-fit checkpoint, then review the retained diff for missing tests, migration hazards, permissions, data exposure, and docs/i18n gaps.
+5. Before editing, confirm any program shape from the plan or tickets against current code. If unresolved runtime order, ownership, key contracts, or verification seams could materially affect the slice, reuse a settled local pattern or resolve only the missing decisions. Surface contradictions instead of redesigning inside the diff; skip routine work.
+6. Run the stateful-change checkpoint before editing when correctness depends on cross-state precedence, temporal ordering, multiple async owners or data sources, several identity paths or representations, or a fallback that can authorize, clear, charge, delete, publish, or make another consequential decision. Keep the checkpoint compact; do not force it onto routine changes whose local loading, error, and success states already follow an established pattern.
+7. If a fix-review loop produces a second confirmed issue from the same state, identity, ordering, or fallback invariant, stop applying isolated patches. Reconstruct the invariant surface, event timeline, and sibling paths before choosing the next fix.
+8. Keep the slice small and reversible. Reuse existing helpers, services, hooks, feature flags, settings, components, and test styles.
+9. Protect user work. Treat unexpected diffs as user-authored and work around them unless the user asks otherwise.
+10. Human owns product, policy, rollout, and irreversible decisions; agent owns implementation facts, diffs, and evidence. If the user is absent, proceed only with explicitly recorded low-risk assumptions.
+11. Update contracts end to end when behavior crosses layers: schemas, APIs, service logic, hooks/types, UI states, docs, and tests.
+12. Run the evidence-amplification checkpoint when a material implementation claim remains poorly observable with existing checks.
+13. Verify the riskiest behavior with the smallest meaningful command or manual check. Record the exact command or manual check invocation and the result summary; include relevant output on failure or surprising pass. If verification cannot run, explain the blocker.
+14. Before finalizing, run the scope-fit checkpoint, then review the retained diff for missing tests, migration hazards, permissions, data exposure, and docs/i18n gaps.
 
 ## Stateful-Change Checkpoint
 

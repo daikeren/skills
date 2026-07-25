@@ -1,10 +1,11 @@
 {
   "skill": "to-tickets",
-  "version": 1,
+  "version": 2,
   "purpose": "Check that specs become independently mergeable and releasable tickets.",
   "positivePrompts": [
     "Break this spec into releasable tickets.",
-    "Create to-tickets slices with blockers, rollout, flags, and cleanup follow-ups."
+    "Create to-tickets slices with blockers, rollout, flags, and cleanup follow-ups.",
+    "Plan a complex orchestration change by settling the program shape and then slicing it into tracer-bullet tickets."
   ],
   "negativePrompts": [
     "Frame the ambiguous problem first.",
@@ -22,9 +23,35 @@
         "Identifies the frontier tickets that can start immediately.",
         "Orders by release safety rather than by architecture layers."
       ]
+    },
+    {
+      "id": "program-shape-before-slicing",
+      "prompt": "Use the supplied repository snapshot to plan releasable tickets for the event-ingestion path. The external contract is settled, but the draft plan conflicts with current job boundaries and leaves important internal decisions open. Keep the plan compact.",
+      "expectedSkill": "to-tickets",
+      "fixtures": [
+        "program-shape-event-ingestion.md"
+      ],
+      "checks": [
+        "Runs the program-shape checkpoint because consequential control flow, ownership, and internal contracts remain unresolved.",
+        "Maps the runtime path in execution order and keeps broker publication single-attempt while assigning delivery retry and dead-letter behavior to the existing worker and queue boundaries.",
+        "Names only the key types or signatures, meaningful structural delta, invariants, and verification seams needed to constrain implementation.",
+        "Surfaces and corrects the draft plan's API-owned retry, API-owned dead-letter, and at-most-once delivery assumptions using the supplied repository evidence.",
+        "Turns the resulting shape into tracer-bullet vertical tickets rather than API, queue, worker, and storage layer tickets."
+      ]
+    },
+    {
+      "id": "routine-work-skips-program-shape",
+      "prompt": "Create a lightweight release ticket for settled documentation copy updates in the user guide and CLI help. Existing repository patterns are explicit, and no runtime behavior or ownership changes.",
+      "expectedSkill": "to-tickets",
+      "checks": [
+        "Keeps the ticket lightweight and does not manufacture a call tree, interface design, or file-tree plan.",
+        "Treats the explicit existing pattern as sufficient and skips the program-shape checkpoint.",
+        "Still gives the ticket acceptance criteria and focused verification appropriate to documentation copy."
+      ]
     }
   ],
   "traceExpectations": [
+    "Program shape is resolved only when consequential internal decisions remain open, and established local patterns can satisfy the checkpoint.",
     "Tickets are tracer-bullet vertical slices through relevant layers.",
     "Tickets are independently reviewable and mergeable where possible.",
     "Frontier means tickets whose blockers are clear.",

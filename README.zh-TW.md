@@ -208,6 +208,7 @@ npm run release:prepare -- 0.2.0
 - `obra/superpowers`：evidence-driven workflows、跨 agent harnesses 的 packaging，以及完成宣告前的 verification。
 - `everyinc/compound-engineering-plugin`：把 planning、review 與 captured learning 視為會持續累積價值的 engineering infrastructure。
 - `addyosmani/agent-skills`：依 development lifecycle 組織 skills；以 commands 搭配 skills；使用 evals 與 structural checks 防止品質漂移。
+- `humanlayer/advanced-context-engineering-for-coding-agents`：intentional context compaction、高槓桿的人類 alignment，以及在複雜 vertical slices 前先做精簡的 program-shape 決策。
 
 實作刻意維持得比完整 methodology framework 更輕量。
 

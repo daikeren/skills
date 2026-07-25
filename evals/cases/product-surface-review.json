@@ -1,6 +1,6 @@
 {
   "skill": "product-surface-review",
-  "version": 1,
+  "version": 2,
   "purpose": "Check that product reviews focus on workflow, clarity, states, accessibility, and trust.",
   "positivePrompts": [
     "Before release, walk through what a new admin sees when billing settings are empty, loading, or fail.",
@@ -31,7 +31,10 @@
       "checks": [
         "Separates impact severity, evidence confidence, occurrence likelihood, and release disposition.",
         "Labels the temporary stale badge Non-blocking or Follow-up because the operation succeeds and the UI self-recovers.",
-        "If recommending a ticket, explains why it can wait and gives a completion or verification signal."
+        {
+          "text": "If recommending a ticket, explains why it can wait and gives a completion or verification signal.",
+          "allowsNotApplicable": true
+        }
       ]
     }
   ],

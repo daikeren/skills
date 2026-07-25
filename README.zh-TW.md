@@ -44,7 +44,7 @@ Pi 會從 `.pi/skills` 與 `.agents/skills` 載入 project skills，從 `~/.pi/a
 
 ## 內含 Skills
 
-- `route-work`：把工作導向正確、聚焦的 skill。
+- `route-work`：建議與任務、風險及目前可用能力相稱的最小充分路徑。
 - `scope-work`：在執行前界定模糊或影響較大的工作。
 - `research-brief`：產出有來源支持、清楚標示證據品質的研究 brief。
 - `prototype`：進行可丟棄的 proof-of-concept 探索，避免直接膨脹成 production work。
@@ -56,7 +56,7 @@ Pi 會從 `.pi/skills` 與 `.agents/skills` 載入 project skills，從 `~/.pi/a
 - `product-surface-review`：review workflows、states、accessibility、trust 與 support burden。
 - `security-privacy-review`：review permissions、sensitive data、trust boundaries 與 abuse cases。
 - `implement-change`：引導 coding work 維持小、符合慣例、可逆且經過驗證。
-- `understand-change`：產生可丟棄的 HTML explainer，依照學習順序解釋 change，並檢查使用者是否建立正確 mental model。
+- `understand-change`：依照學習順序解釋 change，並由 model 選擇最輕量且足夠的 chat、diagram 或可丟棄 HTML 教學媒介。
 - `review-code`：review diff，涵蓋 regressions、product risk、security/privacy、operations 與 tests。
 - `compound-learning`：在工作或 review 前後讀取與記錄可重複利用、已驗證的 lessons。
 
@@ -76,7 +76,7 @@ Pi 會從 `.pi/skills` 與 `.agents/skills` 載入 project skills，從 `~/.pi/a
 | Review product surfaces 與 workflows | `product-surface-review` |
 | Review security、privacy 或 abuse risk | `security-privacy-review` |
 | 實作小而可驗證的 change | `implement-change` |
-| 取得用來理解 code change 的可丟棄 HTML explainer | `understand-change` |
+| 建立能參與後續工作的 code change mental model | `understand-change` |
 | Release 前 review code diff | `review-code` |
 | 讀取或記錄可重複使用的 lessons | `compound-learning` |
 
@@ -131,11 +131,24 @@ LIVE_EVAL_CASES=implement-change/cross-stack-change,review-code/permission-regre
 npm run eval:live
 ```
 
+若要為相同的指定任務加入第二層 comparative eval：
+
+```bash
+LIVE_EVAL_AGENT=codex \
+LIVE_EVAL_CASES=understand-change/small-change-uses-chat,route-work/direct-low-risk-path \
+LIVE_EVAL_COMPARE_BASELINE=1 \
+npm run eval:live
+```
+
+Contract checks 仍是 correctness gate，用來確認 skill 是否符合原本設計的行為。真正有條件的 expectation 可以用 `{ "text": "When ...", "allowsNotApplicable": true }` 明確允許 `not-applicable`；條件不成立時，這會視為已完成的 check，而不是模糊的 review。一般字串永遠不能標為 `not-applicable`，因此窮舉分支、缺少的行為或證據不會被意外跳過。Comparative mode 會額外使用相同 repository snapshot、移除 skill runtime surfaces，並以明確的 no-skill prompt 執行同一任務，再比較 task success、漏掉的風險與不必要步驟，同時記錄執行時間、輸出大小、artifacts，以及 harness 能可靠觀察到的 tool calls。Codex 也會使用隔離的 temporary home，因此 baseline 無法發現已安裝的 user skills；其他 harness 若無法安全替換 global skill home，結果會標示為僅透過 prompt 隔離。額外工作若確實提高品質或降低風險，不能只因成本較高就判輸。Model 與 harness baseline 仍會變動，因此 comparative results 目前是 diagnostics，不是 hard gate；修改 skill contract 前應先累積多次 targeted runs。
+
+Codex runner 會透過 JSONL telemetry 計算已完成的 command、file-change、MCP 與 web-search actions。若 harness 沒有提供可靠的 tool-call telemetry，則記錄 `null`，不自行推測。單次 elapsed-time sample 只能作為方向性證據，不能當作 benchmark。
+
 Live runner 會把準備發布的 repository surfaces 複製到 disposable workspace，並在另一個空白 temporary directory 執行 judge。它會拒絕不安全的 fixture paths 與 symbolic links，對每個 command 套用 timeout，並清理 process group。Codex runs 會使用只包含 authentication file 的 private temporary home；正常結束、`SIGHUP`、`SIGINT` 或 `SIGTERM` 時，runner 會清除 active process trees、temporary workspaces 與 credential copy。Hard kill 或 host failure 仍可能留下 temporary credential residue，必須手動清除。Runner 會在 source checkout 寫入 `evals/results/live-latest.json`。不要把它放進快速 CI gate，因為它依賴本地 agent installation、credentials、model availability 與費用。
 
 ## 日常 Workflow
 
-剛進入新 repository、本地 conventions 已過期，或 repo 需要一份精簡的共用 context 時，使用 `setup-repo-context`。不確定入口時，使用 `route-work` router。其他情況則從最早有幫助的階段開始：
+剛進入新 repository、本地 conventions 已過期，或 repo 需要一份精簡的共用 context 時，使用 `setup-repo-context`。不確定入口時，使用 `route-work`。以下流程是建議地圖，不是必要 pipeline；agent 可以依照任務、風險與目前可用能力進入、略過、組合、調換或離開各階段：
 
 ```text
 setup-repo-context（每個 repo 選用）
@@ -156,7 +169,7 @@ Review shortcuts：
 - User workflows、states、trust、support burden 與 accessibility：使用 `product-surface-review`。
 - Auth、permissions、sensitive data、integrations、billing/admin surfaces 與 abuse cases：使用 `security-privacy-review`。
 
-如果缺少的是人對 change 的理解，而不是另一輪 correctness check，請在 review 前使用 `understand-change`。它會直接在 target repository 外產生一份 self-contained、可丟棄的 HTML explainer，依照 background、intuition、implementation、verification 的學習順序組織內容，並用 interactive quiz 找出理解缺口；不會因為 artifact 已經產生，就假裝使用者已經開啟、驗證或理解它。
+如果缺少的是人對 change 的理解，而不是另一輪 correctness check，請在 review 前使用 `understand-change`。它會選擇最輕量且足夠的教學媒介：精簡 chat、結構化說明或 diagram；只有使用者要求，或 interactive、reusable、cross-layer、dynamic 的學習表面能顯著改善理解時，才產生可丟棄的 HTML explainer。小型且自足的 change 可以直接說明，不強制 evidence、validation 或 readiness 段落。產生說明不代表使用者已理解；需要正式 understanding gate 時，仍要實際評估使用者的回答。
 
 ## 選用的 Per-Repo Context
 

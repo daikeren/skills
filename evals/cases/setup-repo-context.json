@@ -1,6 +1,6 @@
 {
   "skill": "setup-repo-context",
-  "version": 1,
+  "version": 2,
   "purpose": "Check that repo context setup records local conventions from evidence without imposing tool-specific defaults.",
   "positivePrompts": [
     "Set up repo context so future agents know where specs, tickets, verification, and lessons live.",
@@ -39,6 +39,9 @@
     "Existing repo context and instructions are preferred over new structure.",
     "Stale entries are updated only in authorized write mode and when current evidence contradicts them.",
     "Writes require an explicit user request or a repo instruction that explicitly requires maintenance.",
-    "If no write target is clear, the output gives a context snapshot and candidate locations."
+    {
+      "text": "If no write target is clear, the output gives a context snapshot and candidate locations.",
+      "allowsNotApplicable": true
+    }
   ]
 }

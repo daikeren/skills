@@ -1,10 +1,10 @@
 {
   "skill": "route-work",
-  "version": 1,
-  "purpose": "Check that the work router selects one focused skill instead of becoming a broad framework.",
+  "version": 3,
+  "purpose": "Check that the work router recommends the smallest sufficient path without treating this repository's skills or daily flow as a closed mandatory pipeline.",
   "positivePrompts": [
-    "Use route-work to decide what skill should handle this.",
-    "I do not know whether this needs scoping, options, spec, tickets, or review."
+    "Use route-work to decide the smallest sufficient path for this task.",
+    "Recommend a proportionate path across direct action and available capabilities for this unclear task."
   ],
   "negativePrompts": [
     "Directly use review-code on this diff.",
@@ -13,64 +13,80 @@
   "cases": [
     {
       "id": "ambiguous-routing",
-      "prompt": "Only tell us which skill should handle this vague product architecture change and what the next step is.",
+      "prompt": "Only tell us what path should handle this vague product architecture change and what the next step is.",
       "expectedSkill": "route-work",
       "checks": [
-        "Routes to one focused skill.",
-        "Explains why that skill is the right next step.",
-        "Uses the daily flow order without running every phase.",
+        "Recommends a direct action, focused skill, small capability combination, or another available capability based on the actual readiness gap.",
+        "Explains why the recommendation is the smallest sufficient next path.",
+        "Uses the daily flow as an advisory map rather than running every phase.",
         "Stops at a handoff because the prompt explicitly asks only for routing."
       ]
     },
     {
       "id": "route-and-continue",
-      "prompt": "Choose the right skill for this release-safety question and complete that workflow instead of only telling me what to use.",
+      "prompt": "Recommend the right path for this release-safety question and complete the useful next action instead of only telling me what to use.",
       "expectedSkill": "route-work",
       "checks": [
-        "Names one selected skill and a concise reason.",
-        "Continues into the selected skill's workflow in the same response.",
-        "Returns the selected skill's downstream work product."
+        "Names the recommended path and a concise reason.",
+        "Continues into the useful next action without manufacturing an intermediate handoff.",
+        "Returns the downstream work product while preserving user-owned decisions and safety boundaries."
+      ]
+    },
+    {
+      "id": "direct-low-risk-path",
+      "prompt": "Choose the smallest path and continue: fix a clearly identified typo in one user-facing string using the existing focused test. No product or architecture decision is open.",
+      "expectedSkill": "route-work",
+      "fixtures": [
+        "low-risk-typo.md"
+      ],
+      "checks": [
+        "Proceeds with direct execution or a lightweight implementation path rather than adding routing commentary, scoping, options, specification, or ticket phases.",
+        "Continues with the bounded change and focused verification when the fixture or repository evidence makes that possible.",
+        "Does not force the task through a named skill merely to satisfy this repository's taxonomy."
       ]
     },
     {
       "id": "learning-not-review",
-      "prompt": "Choose the right skill and continue: I need to understand this pull request well enough to extend it, not review it for defects.",
+      "prompt": "Choose the right path and continue: I need to understand this pull request well enough to extend it, not review it for defects.",
       "expectedSkill": "route-work",
       "fixtures": [
         "understand-change-state-machine.md"
       ],
       "checks": [
-        "Routes to understand-change rather than a review skill.",
-        "Explains that the goal is a usable mental model, not correctness judgment.",
+        "Recommends understand-change because the goal is a usable mental model rather than correctness judgment.",
         "Continues into a background-first learning path.",
-        "Creates and validates the disposable HTML explainer and returns its path or link."
+        "Lets understand-change choose a proportionate teaching medium instead of requiring an HTML artifact."
       ]
     },
     {
       "id": "raise-fidelity-to-prototype",
-      "prompt": "Choose the right skill and continue: the product goal for diagram search is clear, but discussion cannot tell us whether grouped results, filters, or a flat list will feel right.",
+      "prompt": "Choose the right path and continue: the product goal for diagram search is clear, but discussion cannot tell us whether grouped results, filters, or a flat list will feel right.",
       "expectedSkill": "route-work",
       "checks": [
-        "Routes to prototype because the unresolved question depends on seeing and exercising interaction behavior.",
+        "Recommends prototype because the unresolved question depends on seeing and exercising interaction behavior.",
         "Explains the fidelity increase rather than treating prototype as a mandatory planning phase.",
         "Continues into a disposable, learning-oriented prototype workflow."
       ]
     },
     {
       "id": "keep-settled-contract-in-spec",
-      "prompt": "Choose the right skill and continue: the modal behavior is already settled—cancel closes it and confirm submits it—and we now need the implementation contract, rollout, and validation written down.",
+      "prompt": "Choose the right path and continue: the modal behavior is already settled—cancel closes it and confirm submits it—and we now need the implementation contract, rollout, and validation written down.",
       "expectedSkill": "route-work",
       "checks": [
-        "Routes to to-spec rather than prototype because words and existing decisions are sufficient.",
+        "Recommends to-spec rather than prototype because words and existing decisions are sufficient.",
         "Explains that no higher-fidelity artifact is needed to settle the behavior.",
         "Continues into a lightweight implementation spec."
       ]
     }
   ],
   "traceExpectations": [
-    "The output clearly identifies the route and reason before any downstream result.",
-    "The route uses the lowest fidelity that can answer the current question honestly.",
-    "The output stops at a handoff only for routing-only requests or missing user-owned decisions.",
-    "Only one focused skill is selected."
+    {
+      "text": "When routing itself is the requested deliverable or the path is non-obvious, the output identifies a recommended path and reason before any downstream result.",
+      "allowsNotApplicable": true
+    },
+    "The recommendation is the smallest sufficient path and may be direct action, one skill, a small skill combination, or another available capability.",
+    "This repository's daily flow is advisory rather than a closed mandatory pipeline.",
+    "The route increases fidelity only when the unresolved question requires a more observable artifact.",
+    "The output stops at a handoff only for routing-only requests or a real missing user-owned decision, authority, or safety dependency."
   ]
 }

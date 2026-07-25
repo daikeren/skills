@@ -36,11 +36,21 @@ assert.deepEqual(validateEvalData(validCase()), []);
 
 const nullChecks = clone(validCase());
 nullChecks.cases[0].checks = [null, null];
-expectError(nullChecks, "checks[0] must be a non-empty string");
+expectError(nullChecks, "checks[0] must be a non-empty string or expectation object");
 
 const numericTrace = clone(validCase());
 numericTrace.traceExpectations = [123];
-expectError(numericTrace, "traceExpectations[0] must be a non-empty string");
+expectError(numericTrace, "traceExpectations[0] must be a non-empty string or expectation object");
+
+const explicitNotApplicable = clone(validCase());
+explicitNotApplicable.traceExpectations = [
+  { text: "When HTML is chosen, validate it.", allowsNotApplicable: true }
+];
+assert.deepEqual(validateEvalData(explicitNotApplicable), []);
+
+const invalidExpectationObject = clone(explicitNotApplicable);
+invalidExpectationObject.traceExpectations[0].allowsNotApplicable = "yes";
+expectError(invalidExpectationObject, "allowsNotApplicable must be a boolean");
 
 const emptyPrompt = clone(validCase());
 emptyPrompt.positivePrompts[0] = "";

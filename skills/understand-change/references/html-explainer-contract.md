@@ -1,6 +1,6 @@
 # HTML Explainer Contract
 
-Use this reference for every `understand-change` artifact. The shell, sequence, and visual language stay stable so repeat users spend attention on the change rather than relearning the interface. Content depth and optional teaching modules remain adaptive.
+Use this reference whenever `understand-change` selects a disposable HTML artifact. The shell, sequence, and visual language stay stable so repeat users spend attention on the change rather than relearning the interface. Content depth and optional teaching modules remain adaptive.
 
 ## Fixed Learning Sequence
 

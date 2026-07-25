@@ -44,7 +44,7 @@ This repo now includes lightweight tool-specific adapters:
 
 ## Included Skills
 
-- `route-work`: route work to the right focused skill.
+- `route-work`: recommend the smallest sufficient path across direct action, skills, and other available capabilities.
 - `scope-work`: frame ambiguous or consequential work before execution.
 - `research-brief`: produce source-backed research with explicit evidence quality.
 - `prototype`: run disposable proof-of-concept exploration without production creep.
@@ -56,7 +56,7 @@ This repo now includes lightweight tool-specific adapters:
 - `product-surface-review`: review workflows, states, accessibility, trust, and support burden.
 - `security-privacy-review`: review permissions, sensitive data, trust boundaries, and abuse cases.
 - `implement-change`: guide coding work to stay small, idiomatic, reversible, and verified.
-- `understand-change`: generate a disposable HTML explainer that teaches a change in learning order and checks the learner's mental model.
+- `understand-change`: teach a change in learning order with the lightest useful chat, diagram, or disposable HTML medium.
 - `review-code`: review diffs with attention to regressions, product risk, security/privacy, operations, and tests.
 - `compound-learning`: read and capture reusable validated lessons before and after work or review.
 
@@ -64,7 +64,7 @@ This repo now includes lightweight tool-specific adapters:
 
 | I want to... | Use this skill |
 | --- | --- |
-| Pick the right skill for unclear work | `route-work` |
+| Pick a proportionate path for unclear work | `route-work` |
 | Scope ambiguous or high-impact work | `scope-work` |
 | Research current facts or evidence | `research-brief` |
 | Test an idea with a disposable proof | `prototype` |
@@ -76,7 +76,7 @@ This repo now includes lightweight tool-specific adapters:
 | Review product surfaces and workflows | `product-surface-review` |
 | Review security, privacy, or abuse risk | `security-privacy-review` |
 | Implement a small verified change | `implement-change` |
-| Get a disposable HTML explainer for a code change | `understand-change` |
+| Build a mental model of a code change | `understand-change` |
 | Review a code diff before release | `review-code` |
 | Read or capture reusable lessons | `compound-learning` |
 
@@ -139,11 +139,24 @@ LIVE_EVAL_CASES=implement-change/cross-stack-change,review-code/permission-regre
 npm run eval:live
 ```
 
+To add a second, comparative layer for the same selected tasks:
+
+```bash
+LIVE_EVAL_AGENT=codex \
+LIVE_EVAL_CASES=understand-change/small-change-uses-chat,route-work/direct-low-risk-path \
+LIVE_EVAL_COMPARE_BASELINE=1 \
+npm run eval:live
+```
+
+Contract checks remain the correctness gate: they verify that the skill follows its intended behavior. A genuinely conditional expectation may opt in to `not-applicable` with `{ "text": "When ...", "allowsNotApplicable": true }`; when its condition does not hold, this counts as a completed check rather than an ambiguous review. Plain strings never allow `not-applicable`, so exhaustive branches and missing behavior or evidence cannot be skipped accidentally. Comparative mode additionally runs the same task against a matched repository snapshot with skill runtime surfaces removed and an explicit no-skill prompt, then judges task success, missed risks, and unnecessary steps while recording elapsed time, output size, artifacts, and harness-observable tool calls. Codex also uses an isolated temporary home, so its baseline cannot discover installed user skills; other harnesses are labeled as prompt-isolated when their global skill home cannot be safely replaced. Cost alone does not determine the winner when extra work produces material quality or risk reduction. Comparative results are diagnostics rather than a hard gate while model and harness baselines remain variable; use repeated targeted runs before changing a skill contract.
+
+Codex runs use JSONL telemetry to count completed command, file-change, MCP, and web-search actions. A harness that does not expose reliable tool-call telemetry records `null` instead of estimating it. A single elapsed-time sample is directional evidence, not a benchmark.
+
 The live runner executes each candidate case in a disposable copy of the published repository surfaces, runs the judge from a separate empty temporary directory, rejects unsafe fixture paths and symbolic links, and applies per-command timeouts with process-group cleanup. Codex runs use a private temporary home containing only the authentication file; on normal exit, `SIGHUP`, `SIGINT`, or `SIGTERM`, the runner removes active process trees, temporary workspaces, and the credential copy. A hard kill or host failure can still leave temporary credential residue that must be removed manually. The runner writes `evals/results/live-latest.json` in the source checkout. Keep it out of the fast CI gate because it depends on local agent installation, credentials, model availability, and cost.
 
 ## Daily Flow
 
-Use `setup-repo-context` when entering a new repository, when local conventions are stale, or when a repo needs a lightweight shared context for agents. Use the `route-work` router when the entry point is unclear. Otherwise, pick the earliest useful phase:
+Use `setup-repo-context` when entering a new repository, when local conventions are stale, or when a repo needs a lightweight shared context for agents. Use `route-work` when the entry point is unclear. The following flow is an advisory map, not a required pipeline: agents may enter, skip, combine, reorder, or leave phases when the task, risk, and available capabilities justify it.
 
 ```text
 setup-repo-context (optional per repo)
@@ -164,7 +177,7 @@ Review-specific shortcuts:
 - Use `product-surface-review` for user workflows, states, trust, support burden, and accessibility.
 - Use `security-privacy-review` for auth, permissions, sensitive data, integrations, billing/admin surfaces, and abuse cases.
 
-Use `understand-change` before review when the missing gate is human understanding rather than another correctness check. It directly generates a self-contained disposable HTML explainer outside the target repository, organizes background, intuition, implementation, and verification in learning order, and uses an interactive quiz to expose gaps without claiming that an unopened or untested artifact created understanding.
+Use `understand-change` before review when the missing gate is human understanding rather than another correctness check. It chooses the lightest useful teaching medium: concise chat, structured explanation or diagrams, or a disposable HTML explainer when the user requests one or an interactive, reusable, cross-layer, or dynamic surface materially improves learning. Small self-contained changes can be explained directly without forced evidence, validation, or readiness sections. Producing an explanation never proves understanding; evaluate the learner's answers when a real understanding gate is required.
 
 ## Optional Per-Repo Context
 

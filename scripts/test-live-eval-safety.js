@@ -4,8 +4,12 @@ const assert = require("assert/strict");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
-const { spawn } = require("child_process");
+const { spawn, spawnSync } = require("child_process");
 const {
+  baselineIsolationLevel,
+  booleanEnv,
+  buildBaselinePrompt,
+  buildComparisonJudgePrompt,
   cleanupActiveTemporaryResources,
   cleanupCaseWorkspace,
   cleanupJudgeWorkspace,
@@ -17,7 +21,13 @@ const {
   createTemporaryCodexHome,
   evidenceAppearsInOutput,
   evidenceList,
+  expectationsFor,
   installSignalCleanup,
+  judgmentStatus,
+  measurementsFor,
+  normalizeCommandResult,
+  normalizeComparison,
+  normalizeJudgeChecks,
   parseCaseFilter,
   resolveCommandOverride,
   runCommand,
@@ -63,6 +73,195 @@ assert.deepEqual(evidenceList(["\"first quote\"", "second quote"]), ["first quot
 assert.equal(evidenceAppearsInOutput("Exact runtime\noutput", ["Exact runtime\noutput"]), true);
 assert.equal(evidenceAppearsInOutput("Exact runtime\noutput", ["exact runtime\noutput"]), false);
 assert.equal(evidenceAppearsInOutput("Exact runtime\noutput", ["Exact runtime output"]), false);
+
+const previousCompareBaseline = process.env.LIVE_EVAL_COMPARE_BASELINE;
+try {
+  delete process.env.LIVE_EVAL_COMPARE_BASELINE;
+  assert.equal(booleanEnv("LIVE_EVAL_COMPARE_BASELINE"), false);
+  process.env.LIVE_EVAL_COMPARE_BASELINE = "1";
+  assert.equal(booleanEnv("LIVE_EVAL_COMPARE_BASELINE"), true);
+  process.env.LIVE_EVAL_COMPARE_BASELINE = "false";
+  assert.equal(booleanEnv("LIVE_EVAL_COMPARE_BASELINE"), false);
+  process.env.LIVE_EVAL_COMPARE_BASELINE = "sometimes";
+  assert.throws(() => booleanEnv("LIVE_EVAL_COMPARE_BASELINE"), /must be 1, 0, true, or false/);
+} finally {
+  if (previousCompareBaseline === undefined) {
+    delete process.env.LIVE_EVAL_COMPARE_BASELINE;
+  } else {
+    process.env.LIVE_EVAL_COMPARE_BASELINE = previousCompareBaseline;
+  }
+}
+
+const baselinePrompt = buildBaselinePrompt(
+  { prompt: "Explain the supplied change." },
+  [{ name: "sample.md", content: "fixture content" }],
+  "/tmp/comparative-artifacts"
+);
+assert.match(baselinePrompt, /base capabilities/);
+assert.match(baselinePrompt, /Explain the supplied change/);
+assert.doesNotMatch(baselinePrompt, /Use the Agent Skill at/);
+assert.match(baselinePrompt, /If no artifact is useful, do not mention/i);
+assert.match(baselinePrompt, /do not add a separate evidence or validation section/i);
+
+const codexJsonl = [
+  JSON.stringify({ type: "item.completed", item: { type: "command_execution" } }),
+  JSON.stringify({ type: "item.completed", item: { type: "file_change" } }),
+  JSON.stringify({ type: "item.completed", item: { type: "agent_message", text: "final answer" } }),
+  JSON.stringify({ type: "turn.completed", usage: { input_tokens: 12, output_tokens: 8 } })
+].join("\n");
+const normalizedCodex = normalizeCommandResult(
+  { output: codexJsonl, durationMs: 25, stdoutBytes: Buffer.byteLength(codexJsonl) },
+  { outputFormat: "codex-jsonl" }
+);
+assert.equal(normalizedCodex.output, "final answer");
+assert.equal(normalizedCodex.telemetry.toolCalls, 2);
+assert.deepEqual(normalizedCodex.telemetry.toolCallBreakdown, { command_execution: 1, file_change: 1 });
+assert.deepEqual(normalizedCodex.telemetry.tokens, { input_tokens: 12, output_tokens: 8 });
+const unknownCodexItem = normalizeCommandResult(
+  {
+    output: [
+      JSON.stringify({ type: "item.completed", item: { type: "future_tool_type" } }),
+      JSON.stringify({ type: "item.completed", item: { type: "agent_message", text: "future answer" } })
+    ].join("\n"),
+    durationMs: 10,
+    stdoutBytes: 120
+  },
+  { outputFormat: "codex-jsonl" }
+);
+assert.equal(unknownCodexItem.output, "future answer");
+assert.equal(unknownCodexItem.telemetry.toolCalls, null);
+
+const normalizedClaude = normalizeCommandResult(
+  {
+    output: JSON.stringify({ result: "claude answer", usage: { input_tokens: 4 } }),
+    durationMs: 20,
+    stdoutBytes: 80
+  },
+  { outputFormat: "claude-json" }
+);
+assert.equal(normalizedClaude.output, "claude answer");
+assert.equal(normalizedClaude.telemetry.toolCalls, null);
+assert.deepEqual(normalizedClaude.telemetry.tokens, { input_tokens: 4 });
+
+const sampleMeasurements = measurementsFor(normalizedCodex, [{ size: 14 }, { size: 6 }]);
+assert.equal(sampleMeasurements.durationMs, 25);
+assert.equal(sampleMeasurements.outputBytes, Buffer.byteLength("final answer"));
+assert.equal(sampleMeasurements.toolCalls, 2);
+assert.equal(sampleMeasurements.artifactCount, 2);
+assert.equal(sampleMeasurements.artifactBytes, 20);
+
+const normalizedComparison = normalizeComparison({
+  summary: "candidate improved task quality",
+  skillValue: "improved",
+  dimensions: [
+    { id: "task-success", winner: "candidate", reason: "more complete" },
+    { id: "missed-risks", winner: "candidate", reason: "caught a boundary" },
+    { id: "unnecessary-steps", winner: "tie", reason: "both proportionate" },
+    { id: "tool-calls", winner: "baseline", reason: "used fewer calls" },
+    { id: "elapsed-time", winner: "baseline", reason: "finished sooner" },
+    { id: "output-burden", winner: "tie", reason: "similar size" }
+  ]
+});
+assert.equal(normalizedComparison.status, "completed");
+assert.equal(normalizedComparison.skillValue, "improved");
+assert.equal(normalizedComparison.dimensions.length, 6);
+assert.equal(normalizeComparison(null).skillValue, "review");
+const incompleteComparison = normalizeComparison({
+  summary: "unsupported conclusion",
+  skillValue: "improved",
+  dimensions: []
+});
+assert.equal(incompleteComparison.status, "invalid-json");
+assert.equal(incompleteComparison.skillValue, "review");
+
+const conditionalExpectations = [
+  {
+    id: "trace-1",
+    source: "trace",
+    text: "When HTML is chosen, validate its core interaction.",
+    requiresEvidence: true,
+    allowsNotApplicable: true
+  }
+];
+const notApplicableChecks = normalizeJudgeChecks(
+  {
+    summary: "HTML was not selected.",
+    checks: [
+      {
+        id: "trace-1",
+        status: "not-applicable",
+        evidence: "",
+        reason: "The response used chat and created no HTML artifact."
+      }
+    ]
+  },
+  conditionalExpectations,
+  "chat response"
+).checks;
+assert.equal(notApplicableChecks[0].status, "not-applicable");
+assert.deepEqual(notApplicableChecks[0].evidence, []);
+assert.equal(judgmentStatus(notApplicableChecks), "pass");
+
+const unconditionalNotApplicable = normalizeJudgeChecks(
+  {
+    checks: [
+      {
+        id: "case-1",
+        status: "not-applicable",
+        evidence: "",
+        reason: "Skipped."
+      }
+    ]
+  },
+  [
+    {
+      id: "case-1",
+      source: "case",
+      text: "Explain the behavior.",
+      requiresEvidence: false,
+      allowsNotApplicable: false
+    }
+  ],
+  ""
+).checks;
+assert.equal(unconditionalNotApplicable[0].status, "review");
+
+const architectureEval = JSON.parse(
+  fs.readFileSync(path.join(root, "evals", "cases", "architecture-review.json"), "utf8")
+);
+const architectureExpectations = expectationsFor(architectureEval, architectureEval.cases[0]);
+const exhaustiveArchitectureCheck = architectureExpectations.find((expectation) =>
+  expectation.text.startsWith("If recommending a split")
+);
+assert.ok(exhaustiveArchitectureCheck);
+assert.equal(exhaustiveArchitectureCheck.allowsNotApplicable, false);
+const exhaustiveNotApplicable = normalizeJudgeChecks(
+  {
+    checks: architectureExpectations.map((expectation) => ({
+      id: expectation.id,
+      status: expectation.id === exhaustiveArchitectureCheck.id ? "not-applicable" : "review",
+      evidence: "",
+      reason: expectation.id === exhaustiveArchitectureCheck.id ? "No recommendation was made." : "Not evaluated."
+    }))
+  },
+  architectureExpectations,
+  ""
+).checks.find((check) => check.id === exhaustiveArchitectureCheck.id);
+assert.equal(exhaustiveNotApplicable.status, "review");
+
+const comparisonPrompt = buildComparisonJudgePrompt(
+  { skill: "example-skill" },
+  { id: "example", prompt: "Complete the example." },
+  [],
+  { output: "candidate", artifacts: [], measurements: sampleMeasurements },
+  { output: "baseline", artifacts: [], measurements: { ...sampleMeasurements, toolCalls: null } }
+);
+assert.match(comparisonPrompt, /contract eval is separate/i);
+assert.match(comparisonPrompt, /Without-skill baseline measurements/);
+assert.match(comparisonPrompt, /untrusted eval evidence/);
+assert.equal(baselineIsolationLevel(null, null), "matched-workspace-and-no-skill-prompt");
+assert.equal(baselineIsolationLevel("codex", null), "isolated-home-and-matched-workspace");
+assert.equal(baselineIsolationLevel("codex", "custom-agent"), "matched-workspace-and-no-skill-prompt");
 
 let cleanupCalls = 0;
 const removeSignalCleanup = installSignalCleanup(() => {
@@ -184,6 +383,80 @@ try {
   fs.rmSync(mainSignalRoot, { recursive: true, force: true });
 }
 
+const comparativeWorkspace = createCaseWorkspace();
+try {
+  const mockRunner = path.join(comparativeWorkspace.tempRoot, "mock-live-agent.js");
+  fs.writeFileSync(
+    mockRunner,
+    [
+      "#!/usr/bin/env node",
+      'let input = ""',
+      'process.stdin.setEncoding("utf8")',
+      'process.stdin.on("data", (chunk) => { input += chunk })',
+      'process.stdin.on("end", () => {',
+      '  if (input.includes("You are comparing an Agent Skill result")) {',
+      '    process.stdout.write(JSON.stringify({ summary: "equivalent mock results", skillValue: "neutral", dimensions: [',
+      '      { id: "task-success", winner: "tie", reason: "same mock result" },',
+      '      { id: "missed-risks", winner: "tie", reason: "same mock result" },',
+      '      { id: "unnecessary-steps", winner: "tie", reason: "same mock result" },',
+      '      { id: "tool-calls", winner: "review", reason: "custom runner has no telemetry" },',
+      '      { id: "elapsed-time", winner: "review", reason: "single sample" },',
+      '      { id: "output-burden", winner: "tie", reason: "same mock result" }',
+      '    ] }))',
+      '    return',
+      '  }',
+      '  if (input.includes("You are judging a live eval result")) {',
+      '    const start = input.indexOf("Expectations:\\n") + "Expectations:\\n".length',
+      '    const end = input.indexOf("\\n\\nAgent output:", start)',
+      '    const expectations = JSON.parse(input.slice(start, end))',
+      '    process.stdout.write(JSON.stringify({ summary: "mock contract pass", checks: expectations.map((item) => ({ id: item.id, status: "pass", evidence: "mock work product", reason: "mock evidence" })) }))',
+      '    return',
+      '  }',
+      '  process.stdout.write("mock work product")',
+      '})'
+    ].join("\n"),
+    { mode: 0o700 }
+  );
+  const comparativeResult = spawnSync(
+    process.execPath,
+    [path.join(comparativeWorkspace.workspace, "scripts", "run-live-evals.js")],
+    {
+      cwd: comparativeWorkspace.workspace,
+      encoding: "utf8",
+      timeout: 10000,
+      env: {
+        ...process.env,
+        LIVE_EVAL_COMMAND: mockRunner,
+        LIVE_EVAL_JUDGE_COMMAND: mockRunner,
+        LIVE_EVAL_CASES: "route-work/direct-low-risk-path",
+        LIVE_EVAL_COMPARE_BASELINE: "1",
+        LIVE_EVAL_TIMEOUT_MS: "1000"
+      }
+    }
+  );
+  assert.equal(
+    comparativeResult.status,
+    0,
+    `comparative runner failed:\n${comparativeResult.stdout || ""}\n${comparativeResult.stderr || ""}`
+  );
+  const comparativeOutput = JSON.parse(
+    fs.readFileSync(path.join(comparativeWorkspace.workspace, "evals", "results", "live-latest.json"), "utf8")
+  );
+  assert.equal(comparativeOutput.comparisonEnabled, true);
+  assert.equal(comparativeOutput.results.length, 1);
+  assert.equal(comparativeOutput.results[0].judgmentStatus, "pass");
+  assert.equal(comparativeOutput.results[0].comparison.status, "completed");
+  assert.equal(comparativeOutput.results[0].comparison.skillValue, "neutral");
+  assert.equal(comparativeOutput.results[0].comparison.baseline.status, "completed");
+  assert.equal(
+    comparativeOutput.results[0].comparison.baseline.isolation,
+    "matched-workspace-and-no-skill-prompt"
+  );
+  assert.equal(comparativeOutput.results[0].comparison.candidate.measurements.toolCalls, null);
+} finally {
+  cleanupCaseWorkspace(comparativeWorkspace);
+}
+
 const caseWorkspace = createCaseWorkspace();
 let externalArtifactTarget;
 try {
@@ -238,6 +511,21 @@ try {
   }
 }
 assert.equal(fs.existsSync(caseWorkspace.tempRoot), false);
+
+const baselineWorkspace = createCaseWorkspace({ withoutSkills: true });
+try {
+  assert.ok(fs.existsSync(path.join(baselineWorkspace.workspace, "AGENTS.md")));
+  assert.ok(fs.existsSync(path.join(baselineWorkspace.workspace, "package.json")));
+  assert.ok(fs.existsSync(path.join(baselineWorkspace.workspace, "evals", "fixtures")));
+  assert.equal(fs.existsSync(path.join(baselineWorkspace.workspace, "skills")), false);
+  assert.equal(fs.existsSync(path.join(baselineWorkspace.workspace, "commands")), false);
+  assert.equal(fs.existsSync(path.join(baselineWorkspace.workspace, ".claude")), false);
+  assert.equal(fs.existsSync(path.join(baselineWorkspace.workspace, ".codex-plugin")), false);
+  assert.ok(fs.existsSync(baselineWorkspace.artifactDir));
+} finally {
+  cleanupCaseWorkspace(baselineWorkspace);
+}
+assert.equal(fs.existsSync(baselineWorkspace.tempRoot), false);
 
 const judgeWorkspace = createJudgeWorkspace();
 try {
@@ -304,6 +592,8 @@ const stdinResult = await runCommand(
 );
 assert.equal(stdinResult.status, 0);
 assert.equal(stdinResult.output, "prompt transported through stdin");
+assert.ok(stdinResult.durationMs >= 0);
+assert.equal(stdinResult.stdoutBytes, Buffer.byteLength("prompt transported through stdin"));
 
 const separatedOutput = await runCommand(
   {

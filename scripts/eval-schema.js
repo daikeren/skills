@@ -23,6 +23,29 @@ function validateStringArray(errors, value, field, minimum) {
   });
 }
 
+function validateExpectationArray(errors, value, field, minimum) {
+  if (!Array.isArray(value)) {
+    errors.push(`${field} must be an array`);
+    return;
+  }
+  if (value.length < minimum) {
+    errors.push(`${field} must contain at least ${minimum} item(s)`);
+  }
+  value.forEach((item, index) => {
+    if (isNonEmptyString(item)) return;
+    if (!isObject(item)) {
+      errors.push(`${field}[${index}] must be a non-empty string or expectation object`);
+      return;
+    }
+    if (!isNonEmptyString(item.text)) {
+      errors.push(`${field}[${index}].text must be a non-empty string`);
+    }
+    if (item.allowsNotApplicable !== undefined && typeof item.allowsNotApplicable !== "boolean") {
+      errors.push(`${field}[${index}].allowsNotApplicable must be a boolean`);
+    }
+  });
+}
+
 function validateEvalData(data) {
   const errors = [];
   if (!isObject(data)) {
@@ -41,7 +64,7 @@ function validateEvalData(data) {
 
   validateStringArray(errors, data.positivePrompts, "positivePrompts", 2);
   validateStringArray(errors, data.negativePrompts, "negativePrompts", 0);
-  validateStringArray(errors, data.traceExpectations, "traceExpectations", 1);
+  validateExpectationArray(errors, data.traceExpectations, "traceExpectations", 1);
 
   const negativeRoutes = data.negativeRoutes === undefined ? [] : data.negativeRoutes;
   if (!Array.isArray(negativeRoutes)) {
@@ -105,7 +128,7 @@ function validateEvalData(data) {
     } else if (isNonEmptyString(data.skill) && item.expectedSkill !== data.skill) {
       errors.push(`${prefix}.expectedSkill must match top-level skill`);
     }
-    validateStringArray(errors, item.checks, `${prefix}.checks`, 2);
+    validateExpectationArray(errors, item.checks, `${prefix}.checks`, 2);
     if (item.fixtures !== undefined) {
       validateStringArray(errors, item.fixtures, `${prefix}.fixtures`, 1);
     }

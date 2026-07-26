@@ -6,6 +6,7 @@ const os = require("os");
 const path = require("path");
 const { spawn, spawnSync } = require("child_process");
 const {
+  aggregateResults,
   baselineIsolationLevel,
   booleanEnv,
   buildBaselinePrompt,
@@ -24,6 +25,7 @@ const {
   evidenceAppearsInOutput,
   evidenceList,
   expectationsFor,
+  expandCaseTrials,
   formatProgressLine,
   installSignalCleanup,
   judgmentStatus,
@@ -34,9 +36,12 @@ const {
   normalizeJudgeChecks,
   parseCaseFilter,
   resolveCommandOverride,
+  renderExecutionTrace,
   renderSkillBundle,
   runCommand,
   selectCases,
+  sanitizeTraceText,
+  summarizeTraceCommand,
   terminateActiveProcessTrees
 } = require("./run-live-evals");
 
@@ -116,6 +121,10 @@ assert.throws(
   () => selectCases([], new Set(["review-code/missing"])),
   /did not match: review-code\/missing/
 );
+assert.deepEqual(
+  expandCaseTrials(selectedCases, 3).map(({ trial, trialCount }) => [trial, trialCount]),
+  [[1, 3], [2, 3], [3, 3]]
+);
 const bundledSkill = renderSkillBundle("understand-change");
 assert.match(bundledSkill, /Skill file SKILL\.md:/);
 assert.match(bundledSkill, /Skill file references\/html-explainer-contract\.md:/);
@@ -163,8 +172,19 @@ assert.match(baselinePrompt, /If no artifact is useful, do not mention/i);
 assert.match(baselinePrompt, /do not add a separate evidence or validation section/i);
 
 const codexJsonl = [
-  JSON.stringify({ type: "item.completed", item: { type: "command_execution" } }),
-  JSON.stringify({ type: "item.completed", item: { type: "file_change" } }),
+  JSON.stringify({
+    type: "item.completed",
+    item: {
+      type: "command_execution",
+      command: "API_TOKEN=secret npm test -- --password hunter2",
+      exit_code: 0,
+      status: "completed"
+    }
+  }),
+  JSON.stringify({
+    type: "item.completed",
+    item: { type: "file_change", changes: [{ path: "src/example.js", kind: "update" }] }
+  }),
   JSON.stringify({ type: "item.completed", item: { type: "agent_message", text: "final answer" } }),
   JSON.stringify({ type: "turn.completed", usage: { input_tokens: 12, output_tokens: 8 } })
 ].join("\n");
@@ -176,6 +196,36 @@ assert.equal(normalizedCodex.output, "final answer");
 assert.equal(normalizedCodex.telemetry.toolCalls, 2);
 assert.deepEqual(normalizedCodex.telemetry.toolCallBreakdown, { command_execution: 1, file_change: 1 });
 assert.deepEqual(normalizedCodex.telemetry.tokens, { input_tokens: 12, output_tokens: 8 });
+assert.equal(normalizedCodex.telemetry.executionTrace.length, 2);
+const renderedTrace = renderExecutionTrace(normalizedCodex.telemetry.executionTrace);
+assert.match(renderedTrace, /npm test/);
+assert.match(renderedTrace, /src\/example\.js/);
+assert.doesNotMatch(renderedTrace, /secret|hunter2/);
+assert.match(sanitizeTraceText("https://user:pass@example.com"), /<redacted>@example\.com/);
+assert.doesNotMatch(sanitizeTraceText("curl -H 'Authorization: Bearer abcdefghijk' https://example.com"), /abcdefghijk/);
+for (const unsafeCommand of [
+  "curl -H 'Cookie: session=topsecret' https://example.com",
+  "curl -H 'X-API-Key: topsecret' https://example.com",
+  "psql 'postgres://user:topsecret@db.example.com/app'",
+  "PRIVATE_KEY=topsecret node deploy.js",
+  "LABEL='private value with spaces' npm test",
+  "curl -H 'Authorization: Bearer sk-abcdefghijklmnopqrst' https://example.com"
+]) {
+  const summarized = JSON.stringify(summarizeTraceCommand(unsafeCommand));
+  assert.doesNotMatch(summarized, /topsecret|private value|abcdefghijklmnopqrst/);
+}
+for (const unsafeCommand of [
+  "curl -u user:topsecret https://example.com",
+  "curl --user user:topsecret https://example.com",
+  "sshpass -p topsecret ssh example.com"
+]) {
+  const summarized = JSON.stringify(summarizeTraceCommand(unsafeCommand));
+  assert.doesNotMatch(summarized, /user|topsecret|example\.com/);
+}
+assert.deepEqual(
+  summarizeTraceCommand("/bin/zsh -lc 'npm run validate && git status --short'"),
+  { tools: ["git", "npm"], actions: ["npm run validate", "git status"] }
+);
 const unknownCodexItem = normalizeCommandResult(
   {
     output: [
@@ -211,27 +261,46 @@ assert.equal(sampleMeasurements.artifactBytes, 20);
 
 const normalizedComparison = normalizeComparison({
   summary: "candidate improved task quality",
-  skillValue: "improved",
+  overallWinner: "A",
   dimensions: [
-    { id: "task-success", winner: "candidate", reason: "more complete" },
-    { id: "missed-risks", winner: "candidate", reason: "caught a boundary" },
+    { id: "task-success", winner: "A", reason: "more complete" },
+    { id: "missed-risks", winner: "A", reason: "caught a boundary" },
     { id: "unnecessary-steps", winner: "tie", reason: "both proportionate" },
-    { id: "tool-calls", winner: "baseline", reason: "used fewer calls" },
-    { id: "elapsed-time", winner: "baseline", reason: "finished sooner" },
+    { id: "tool-calls", winner: "B", reason: "used fewer calls" },
+    { id: "elapsed-time", winner: "B", reason: "finished sooner" },
     { id: "output-burden", winner: "tie", reason: "similar size" }
   ]
-});
+}, "A");
 assert.equal(normalizedComparison.status, "completed");
 assert.equal(normalizedComparison.skillValue, "improved");
 assert.equal(normalizedComparison.dimensions.length, 6);
+assert.equal(normalizeComparison({
+  summary: "response A wins",
+  overallWinner: "A",
+  dimensions: normalizedComparison.dimensions.map((dimension) => ({
+    id: dimension.id,
+    winner: dimension.winner === "candidate" ? "A" : dimension.winner === "baseline" ? "B" : dimension.winner,
+    reason: dimension.reason
+  }))
+}, "B").skillValue, "regressed");
 assert.equal(normalizeComparison(null).skillValue, "review");
 const incompleteComparison = normalizeComparison({
   summary: "unsupported conclusion",
-  skillValue: "improved",
+  overallWinner: "A",
   dimensions: []
 });
 assert.equal(incompleteComparison.status, "invalid-json");
 assert.equal(incompleteComparison.skillValue, "review");
+
+const aggregateSample = aggregateResults([
+  { skill: "example", id: "case", status: "completed", judgmentStatus: "pass", measurements: { durationMs: 30, outputBytes: 300, toolCalls: 3 }, comparison: { skillValue: "improved", dimensions: normalizedComparison.dimensions, baseline: { measurements: { durationMs: 20, outputBytes: 200, toolCalls: 2 } } } },
+  { skill: "example", id: "case", status: "completed", judgmentStatus: "review", measurements: { durationMs: 10, outputBytes: 100, toolCalls: 1 }, comparison: { skillValue: "regressed", dimensions: normalizedComparison.dimensions, baseline: { measurements: { durationMs: 15, outputBytes: 150, toolCalls: 1 } } } },
+  { skill: "example", id: "case", status: "completed", judgmentStatus: "pass", measurements: { durationMs: 20, outputBytes: 200, toolCalls: 2 }, comparison: { skillValue: "improved", dimensions: normalizedComparison.dimensions, baseline: { measurements: { durationMs: 18, outputBytes: 180, toolCalls: 1 } } } }
+], true)[0];
+assert.equal(aggregateSample.comparison.majoritySkillValue, "improved");
+assert.equal(aggregateSample.comparison.skillValueRates.improved, 0.667);
+assert.equal(aggregateSample.comparison.measurements.candidateMedian.durationMs, 20);
+assert.equal(aggregateSample.comparison.measurements.pairedDeltaMedian.outputBytes, 20);
 
 const conditionalExpectations = [
   {
@@ -315,10 +384,12 @@ const comparisonPrompt = buildComparisonJudgePrompt(
   { output: "candidate", artifacts: [], measurements: sampleMeasurements },
   { output: "baseline", artifacts: [], measurements: { ...sampleMeasurements, toolCalls: null } }
 );
-assert.match(comparisonPrompt, /contract eval is separate/i);
-assert.match(comparisonPrompt, /Without-skill baseline measurements/);
+assert.match(comparisonPrompt, /separate contract eval remains/i);
+assert.match(comparisonPrompt, /identities are intentionally blinded/i);
+assert.match(comparisonPrompt, /Response A measurements/);
+assert.doesNotMatch(comparisonPrompt, /Candidate measurements|Without-skill baseline measurements/);
 assert.match(comparisonPrompt, /untrusted eval evidence/);
-assert.match(comparisonPrompt, /task success and missed risks are tied.*regressed rather than neutral/i);
+assert.match(comparisonPrompt, /task success and missed risks are tied.*select the other response rather than tie/i);
 assert.equal(baselineIsolationLevel(null, null), "matched-workspace-inline-skill-only");
 assert.equal(baselineIsolationLevel("codex", null), "isolated-home-matched-workspace-inline-skill-only");
 assert.equal(baselineIsolationLevel("codex", "custom-agent"), "matched-workspace-inline-skill-only");
@@ -454,8 +525,8 @@ try {
       'process.stdin.setEncoding("utf8")',
       'process.stdin.on("data", (chunk) => { input += chunk })',
       'process.stdin.on("end", () => {',
-      '  if (input.includes("You are comparing an Agent Skill result")) {',
-      '    process.stdout.write(JSON.stringify({ summary: "equivalent mock results", skillValue: "neutral", dimensions: [',
+      '  if (input.includes("You are comparing two agent results")) {',
+      '    process.stdout.write(JSON.stringify({ summary: "equivalent mock results", overallWinner: "tie", dimensions: [',
       '      { id: "task-success", winner: "tie", reason: "same mock result" },',
       '      { id: "missed-risks", winner: "tie", reason: "same mock result" },',
       '      { id: "unnecessary-steps", winner: "tie", reason: "same mock result" },',
@@ -491,6 +562,7 @@ try {
         LIVE_EVAL_CASES: "route-work/ambiguous-routing,understand-change/small-change-uses-chat",
         LIVE_EVAL_COMPARE_BASELINE: "1",
         LIVE_EVAL_CONCURRENCY: "2",
+        LIVE_EVAL_REPEATS: "3",
         LIVE_EVAL_TIMEOUT_MS: "1000"
       }
     }
@@ -500,26 +572,43 @@ try {
     0,
     `comparative runner failed:\n${comparativeResult.stdout || ""}\n${comparativeResult.stderr || ""}`
   );
-  assert.match(comparativeResult.stderr, /Live eval starting 2 case\(s\) with concurrency 2\./);
-  assert.match(comparativeResult.stderr, /route-work\/ambiguous-routing candidate:start/);
-  assert.match(comparativeResult.stderr, /understand-change\/small-change-uses-chat baseline:complete/);
+  assert.match(comparativeResult.stderr, /Live eval starting 2 case\(s\) across 6 trial\(s\) with concurrency 2\./);
+  assert.match(comparativeResult.stderr, /route-work\/ambiguous-routing \[trial 1\/3\] candidate:start/);
+  assert.match(comparativeResult.stderr, /understand-change\/small-change-uses-chat \[trial 3\/3\] baseline:complete/);
   assert.match(comparativeResult.stderr, /contract-judge:complete \d+ms status=completed/);
   assert.match(comparativeResult.stderr, /comparison-judge:complete \d+ms status=completed value=neutral/);
-  assert.match(comparativeResult.stderr, /\[live-eval 2\/2\].*case:complete/);
+  assert.match(comparativeResult.stderr, /\[live-eval 6\/6\].*case:complete/);
   const comparativeOutput = JSON.parse(
     fs.readFileSync(path.join(comparativeWorkspace.workspace, "evals", "results", "live-latest.json"), "utf8")
   );
   assert.equal(comparativeOutput.comparisonEnabled, true);
   assert.equal(comparativeOutput.concurrency, 2);
-  assert.equal(comparativeOutput.results.length, 2);
+  assert.equal(comparativeOutput.repeats, 3);
+  assert.equal(comparativeOutput.results.length, 6);
   assert.deepEqual(
     comparativeOutput.results.map((item) => `${item.skill}/${item.id}`),
-    ["route-work/ambiguous-routing", "understand-change/small-change-uses-chat"]
+    [
+      "route-work/ambiguous-routing",
+      "route-work/ambiguous-routing",
+      "route-work/ambiguous-routing",
+      "understand-change/small-change-uses-chat",
+      "understand-change/small-change-uses-chat",
+      "understand-change/small-change-uses-chat"
+    ]
   );
+  assert.deepEqual(comparativeOutput.results.map((item) => item.trial), [1, 2, 3, 1, 2, 3]);
   assert.ok(comparativeOutput.results.every((item) => item.judgmentStatus === "pass"));
   assert.ok(comparativeOutput.results.every((item) => item.comparison.status === "completed"));
   assert.ok(comparativeOutput.results.every((item) => item.comparison.skillValue === "neutral"));
   assert.ok(comparativeOutput.results.every((item) => item.comparison.baseline.status === "completed"));
+  assert.deepEqual(
+    comparativeOutput.results.slice(0, 3).map((item) => item.comparison.presentationOrder.A),
+    ["candidate", "baseline", "candidate"]
+  );
+  assert.equal(comparativeOutput.aggregates.length, 2);
+  assert.ok(comparativeOutput.aggregates.every((item) => item.comparison.majoritySkillValue === "neutral"));
+  assert.ok(comparativeOutput.aggregates.every((item) => item.comparison.skillValueCounts.neutral === 3));
+  assert.ok(comparativeOutput.aggregates.every((item) => item.comparison.measurements.candidateMedian.outputBytes > 0));
   assert.equal(
     comparativeOutput.results[0].comparison.baseline.isolation,
     "matched-workspace-inline-skill-only"

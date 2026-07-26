@@ -149,11 +149,23 @@ LIVE_EVAL_CONCURRENCY=2 \
 npm run eval:live
 ```
 
+要判斷是否應修改 skill contract 時，使用重複的 paired trials：
+
+```bash
+LIVE_EVAL_AGENT=codex \
+LIVE_EVAL_CASES=review-code/release-disposition-tail-risk,understand-change/cross-layer-adaptive-medium \
+LIVE_EVAL_COMPARE_BASELINE=1 \
+LIVE_EVAL_REPEATS=3 \
+npm run eval:live
+```
+
+每個 `(case, trial)` 都是獨立的 concurrency unit。Comparison judge 只會看到 blinded `Response A` 與 `Response B`，candidate 與 baseline 的位置會依 trial 交替。`live-latest.json` 會保留每個依序排列的 trial，並新增 per-case aggregates：contract pass/fail/review rates、comparative majority 與 win rates，以及 candidate、baseline、paired delta 的 median measurements。結果必須取得嚴格多數；分裂的結果會 aggregate 成 `review`，不會隱藏 variance。
+
 Contract checks 仍是 correctness gate，用來確認 skill 是否符合原本設計的行為。真正有條件的 expectation 可以用 `{ "text": "When ...", "allowsNotApplicable": true }` 明確允許 `not-applicable`；條件不成立時，這會視為已完成的 check，而不是模糊的 review。一般字串永遠不能標為 `not-applicable`，因此窮舉分支、缺少的行為或證據不會被意外跳過。Comparative mode 讓 candidate 與 baseline 使用相同、已移除全部 skill runtime surfaces 的 task workspace；只有 candidate 會在 prompt 內收到被測的 selected skill bundle，baseline 則收到明確的 no-skill prompt。Judge 會比較 task success、漏掉的風險與不必要步驟，同時記錄執行時間、輸出大小、artifacts，以及 harness 能可靠觀察到的 tool calls。Codex 也會使用隔離的 temporary home，因此 baseline 無法發現已安裝的 user skills；其他 harness 若無法安全替換 global skill home，結果會標示為僅透過 prompt 隔離。目標是可重複的淨改善：額外工作若確實提高品質或降低重要風險就有價值；若 task quality 相同卻增加可避免的負擔，應視為 regression，而不是成功。不需要額外 judgment 的任務通常應直接略過 skill。Model 與 harness baseline 仍會變動，因此 comparative results 目前是 diagnostics，不是 hard gate；修改 skill contract 前應先累積多次 targeted runs。
 
-Codex runner 會透過 JSONL telemetry 計算已完成的 command、file-change、MCP 與 web-search actions。若 harness 沒有提供可靠的 tool-call telemetry，則記錄 `null`，不自行推測。單次 elapsed-time sample 只能作為方向性證據，不能當作 benchmark。
+Codex runner 會透過 JSONL telemetry 計算已完成的 command、file-change、MCP 與 web-search actions。Contract judge 也會收到 bounded、redacted execution trace，讓 process expectations 能依觀察到的 actions 判斷，而不是只看 final answer 的敘述。Command output、raw command arguments、MCP arguments 與 web-search queries 都會省略。Commands 只會保留 allowlisted structural summary，包括已知 tool 與 `npm run validate`、`git status` 這類安全 action；未知 command 只會記為 `other`。Sanitized trace 會保留在 candidate result 中，方便稽核。若 harness 沒有提供可靠的 structured telemetry，則記錄 unavailable evidence，不自行推測。單次 elapsed-time sample 只能作為方向性證據，不能當作 benchmark。
 
-Live runner 會平行執行不同 cases，但維持同一 case 內各 phase 的必要順序。它會把 case/phase 開始與完成、elapsed time、aggregate progress 寫到 stderr，並把同一份帶 timestamp 的 stream 持久化到已忽略的 `evals/results/live-progress.log`，不會回顯 prompts 或 fixture contents。Candidate 與 baseline 都各自使用 disposable、內容一致的 task workspace，並移除 skill runtime surfaces、eval definitions、results 與其他 cases 的 fixtures；selected skill bundle 與本 case fixture 只會透過 candidate prompt 提供。Codex case 也各自使用只包含 authentication file 的 private temporary home，judges 則在獨立的空白 temporary directories 執行。Runner 會拒絕不安全的 fixture paths 與 symbolic links，對每個 command 套用 timeout，並清理 process group。正常結束、`SIGHUP`、`SIGINT` 或 `SIGTERM` 時，會清除 active process trees、temporary workspaces 與 credential copies。Hard kill 或 host failure 仍可能留下 temporary credential residue，必須手動清除。Runner 會按照原 case 順序，把結果、concurrency 與總 duration 寫入 source checkout 的 `evals/results/live-latest.json`。不要把它放進快速 CI gate，因為它依賴本地 agent installation、credentials、model availability 與費用。
+Live runner 會平行執行 case trials，但維持同一 trial 內各 phase 的必要順序。它會把 case、trial、phase 的開始與完成、elapsed time、aggregate progress 寫到 stderr，並把同一份帶 timestamp 的 stream 持久化到已忽略的 `evals/results/live-progress.log`，不會回顯 prompts 或 fixture contents。Candidate 與 baseline 都各自使用 disposable、內容一致的 task workspace，並移除 skill runtime surfaces、eval definitions、results 與其他 cases 的 fixtures；selected skill bundle 與本 case fixture 只會透過 candidate prompt 提供。Codex case 也各自使用只包含 authentication file 的 private temporary home，judges 則在獨立的空白 temporary directories 執行。Runner 會拒絕不安全的 fixture paths 與 symbolic links，對每個 command 套用 timeout，並清理 process group。正常結束、`SIGHUP`、`SIGINT` 或 `SIGTERM` 時，會清除 active process trees、temporary workspaces 與 credential copies。Hard kill 或 host failure 仍可能留下 temporary credential residue，必須手動清除。Runner 會把依序排列的 trial results、aggregates、concurrency、repeats 與總 duration 寫入 source checkout 的 `evals/results/live-latest.json`。不要把它放進快速 CI gate，因為它依賴本地 agent installation、credentials、model availability 與費用。
 
 ## 日常 Workflow
 

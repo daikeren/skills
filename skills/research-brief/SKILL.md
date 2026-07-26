@@ -21,7 +21,9 @@ description: Produces source-backed research briefs with clear evidence quality,
 
 ## Output
 
-Produce a concise brief:
+For a bounded evidence-quality question, answer with the evidence conclusion, why the current evidence is or is not sufficient, and the smallest next evidence-gathering step. Do not force an evidence table, exhaustive alternative comparison, or handoff ceremony when no source set or vendor decision is available.
+
+For a substantial sourced research task, produce the useful subset of:
 
 - Decision: the question being answered.
 - Evidence bottom line: what the sources establish, confidence, and the most important limitation.

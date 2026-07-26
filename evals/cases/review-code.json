@@ -1,6 +1,6 @@
 {
   "skill": "review-code",
-  "version": 4,
+  "version": 7,
   "purpose": "Check that review tasks produce findings-first code review instead of style commentary or summaries first.",
   "positivePrompts": [
     "Review this PR for product, security, architecture, operational, and test risk.",
@@ -64,7 +64,8 @@
         "Keeps impact severity, occurrence likelihood, evidence confidence, and release disposition as separate labels.",
         "Does not treat low likelihood as automatically non-blocking.",
         "Marks the issue blocking when evidence supports a credible duplicate-charge path, despite uncommon preconditions.",
-        "Explains why retrying with a different idempotency key can duplicate an accepted charge after a timeout."
+        "Explains why retrying with a different idempotency key can duplicate an accepted charge after a timeout.",
+        "Keeps this one-finding review compact and omits multi-lens process narration that does not change the verdict."
       ]
     },
     {
@@ -101,16 +102,28 @@
     }
   ],
   "traceExpectations": [
-    "Findings appear before summary.",
+    "An optional release verdict and concise rationale may precede findings; any change summary follows the findings.",
     "Each finding has severity, confidence, likelihood, disposition, impact, and location when available.",
     "The release verdict says Block, Approve with follow-ups, or Approve, and explicitly says when there are no blocking findings.",
-    "Low-likelihood catastrophic, irreversible, cross-tenant, permission, privacy, data-loss, or financial risks remain blocking when supported by concrete evidence.",
     {
-      "text": "When a high-impact finding has a safe narrow reproduction path, the review uses it and identifies the resulting proof as executable evidence.",
+      "text": "When catastrophic, irreversible, cross-tenant, permission, privacy, data-loss, or financial risk is supported by concrete evidence, low likelihood does not make it non-blocking.",
       "allowsNotApplicable": true
     },
-    "Review uses parallel subagents when available or names an isolated-pass fallback.",
-    "Stateful reviews reconstruct state precedence, event order, canonical identity, async ownership, and fallback behavior before declaring readiness.",
-    "Review considers product, security/privacy, architecture, operations, and tests when relevant."
+    {
+      "text": "When a high-impact finding has a safe narrow reproduction already available in the supplied repository or fixtures, the review uses it and identifies the resulting proof as executable evidence.",
+      "allowsNotApplicable": true
+    },
+    {
+      "text": "For a non-trivial review, the review uses parallel subagents when available or names an isolated-pass fallback.",
+      "allowsNotApplicable": true
+    },
+    {
+      "text": "For a stateful review, the review reconstructs the relevant state or event ordering, identity or idempotency boundary, ownership, and fallback behavior needed to judge the target.",
+      "allowsNotApplicable": true
+    },
+    {
+      "text": "The review considers product, security/privacy, architecture, operations, and tests when relevant.",
+      "allowsNotApplicable": true
+    }
   ]
 }

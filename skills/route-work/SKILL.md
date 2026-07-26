@@ -1,6 +1,6 @@
 ---
 name: route-work
-description: Recommends a proportionate path for product and engineering work. Use when the user is unsure what capability or skill fits, asks for routing help, or needs a suggested flow across scoping, research, prototyping, decisions, specs, tickets, implementation, change understanding, review, and learning. Treat the repository's skills as available options rather than a closed world.
+description: Recommends a proportionate path for product and engineering work. Use when the user is unsure what capability or skill fits, explicitly asks for routing help, or needs a suggested flow across scoping, research, prototyping, decisions, specs, tickets, implementation, change understanding, review, and learning. Do not use it for an already-bounded task whose next action and verification path are obvious; execute that work directly. Treat the repository's skills as available options rather than a closed world.
 ---
 
 # Route Work
@@ -16,6 +16,7 @@ description: Recommends a proportionate path for product and engineering work. U
 7. Use the daily flow as a map, not a pipeline: scope -> options -> research or prototype -> spec -> tickets -> implementation -> optional change understanding -> review -> compound learning. Enter, skip, combine, reorder, or leave phases when the task and available capabilities justify it.
 8. Apply a fidelity check before escalating the work product. Stay with discussion, scoping, options, or a spec when words and existing evidence suffice; use a prototype when the decision depends on seeing, feeling, exercising, or measuring an artifact. Do not increase fidelity merely because code is cheap or a named phase exists.
 9. Make routing visible only when it helps the user evaluate a non-obvious choice. Stop at a handoff only when the user asked for routing alone or a missing user-owned decision or authority blocks safe continuation.
+10. When continuing through a selected focused skill, use that capability's current instructions when available instead of approximating a weaker version inside the router. Keep the downstream work proportionate; routing does not require replaying its full workflow when only a subset is relevant.
 
 ## Output
 

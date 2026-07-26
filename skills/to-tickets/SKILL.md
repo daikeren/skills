@@ -7,11 +7,11 @@ description: Breaks a spec, plan, or conversation into independently reviewable,
 
 ## Workflow
 
-1. Read the source spec, plan, prototype notes, or conversation. Fetch referenced files or issues when available, and use the project's domain vocabulary and ADRs when local evidence provides them.
+1. Read the source spec, plan, prototype notes, or conversation. For a complete, routine, settled change, use the supplied scope and established pattern directly. Fetch referenced files or issues only when they can change the slice, and use the project's domain vocabulary and ADRs when local evidence provides them.
 2. Check repo-local context, lessons, glossary, ADRs, or similar stores before choosing slice boundaries.
 3. Explore the codebase only enough to understand current state, stable interfaces, similar prior art, and enabling refactors that would make the work safer. Avoid speculative cleanup.
 4. Scale depth to risk. Low-risk, solo, reversible work can use a lightweight ticket list; cross-functional, irreversible, sensitive-data, migration, security, or compliance work needs explicit gates, owners, rollout, and rollback.
-5. Before slicing, sketch unresolved runtime order, ownership, key contracts, invariants, and verification seams only when a wrong internal shape would cause material rework. Reuse a settled local pattern; skip routine work. Include file placement only when it affects ownership, and keep the sketch inside the ticket artifact without turning tickets into architecture layers.
+5. Before slicing, sketch unresolved runtime order, ownership, key contracts, invariants, and verification seams only when a wrong internal shape would cause material rework. Reuse a settled local pattern; skip routine work. When a delivery, idempotency, or at-most-once guarantee spans retries or separate durability and side-effect boundaries, identify the actual mechanism—such as a transaction, uniqueness constraint, stable provider key, idempotent operation, claim lifecycle, or acknowledgement—and challenge its relevant failure windows. Do not assume a claim → effect → completion template when the system uses another mechanism; leave an unresolved guarantee as a blocker instead of embedding a false invariant in the tickets. Include file placement only when it affects ownership, and keep the sketch inside the ticket artifact without turning tickets into architecture layers.
 6. Identify the release path before slicing: compatibility, data migration, user-visible rollout, permission changes, and cleanup.
 7. Prefer tracer-bullet vertical increments: each slice cuts a narrow but complete path through the relevant layers and is demoable or verifiable on its own.
 8. Size tickets for a fresh agent context window. If a ticket needs too much retained context, split it or make the dependency edge explicit.
@@ -26,7 +26,9 @@ description: Breaks a spec, plan, or conversation into independently reviewable,
 
 ## Output
 
-Return:
+For routine settled work that is safely one ticket, return that ticket directly with its outcome, acceptance signal, focused verification, and any real release note. Omit release strategy, program shape, frontier, granularity, handoff, and cleanup sections when they add no decision or delivery value.
+
+For multi-ticket or consequential work, return the useful subset of:
 
 - Release strategy: how the work gets safely from current state to shipped state.
 - Program shape, when needed.

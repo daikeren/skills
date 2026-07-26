@@ -1,6 +1,6 @@
 {
   "skill": "route-work",
-  "version": 3,
+  "version": 5,
   "purpose": "Check that the work router recommends the smallest sufficient path without treating this repository's skills or daily flow as a closed mandatory pipeline.",
   "positivePrompts": [
     "Use route-work to decide the smallest sufficient path for this task.",
@@ -9,6 +9,12 @@
   "negativePrompts": [
     "Directly use review-code on this diff.",
     "Run the research-brief skill for this vendor comparison."
+  ],
+  "negativeRoutes": [
+    {
+      "prompt": "Implement a small reversible production change: correct an already-scoped one-string typo and run its existing focused test. No product or architecture decision is open.",
+      "expectedSkill": "implement-change"
+    }
   ],
   "cases": [
     {
@@ -33,19 +39,6 @@
       ]
     },
     {
-      "id": "direct-low-risk-path",
-      "prompt": "Choose the smallest path and continue: fix a clearly identified typo in one user-facing string using the existing focused test. No product or architecture decision is open.",
-      "expectedSkill": "route-work",
-      "fixtures": [
-        "low-risk-typo.md"
-      ],
-      "checks": [
-        "Proceeds with direct execution or a lightweight implementation path rather than adding routing commentary, scoping, options, specification, or ticket phases.",
-        "Continues with the bounded change and focused verification when the fixture or repository evidence makes that possible.",
-        "Does not force the task through a named skill merely to satisfy this repository's taxonomy."
-      ]
-    },
-    {
       "id": "learning-not-review",
       "prompt": "Choose the right path and continue: I need to understand this pull request well enough to extend it, not review it for defects.",
       "expectedSkill": "route-work",
@@ -65,7 +58,7 @@
       "checks": [
         "Recommends prototype because the unresolved question depends on seeing and exercising interaction behavior.",
         "Explains the fidelity increase rather than treating prototype as a mandatory planning phase.",
-        "Continues into a disposable, learning-oriented prototype workflow."
+        "Continues using the prototype capability's decision-quality safeguards rather than producing a weaker routing-only sketch."
       ]
     },
     {

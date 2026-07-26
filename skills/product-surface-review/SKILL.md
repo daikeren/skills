@@ -9,11 +9,12 @@ description: Reviews user-facing workflows, empty, loading, error, and recovery 
 
 1. Identify the target user, job-to-be-done, business goal, and release context.
 2. Stay report-only. Inspect and report findings or recommendations; do not edit designs, copy, code, docs, or configuration unless the user explicitly changes the task from review to fix.
-3. Walk the surface as a user: entry point, happy path, edge states, empty/loading/error states, permissions, destructive actions, and recovery. If no running instance is available, walk the routes, templates, components, and copy that render the surface.
-4. Check clarity, trust, accessibility, privacy disclosure, support burden, and measurement.
-5. Separate user regressions from taste, optional future improvements, and missing validation. Make only actionable findings tied to impact.
-6. Review implementation only as needed to validate behavior, state coverage, and accessibility risk.
-7. Recommend the smallest product change that improves user outcome without widening scope unnecessarily.
+3. Establish the evidence boundary before calling something a defect. Review supplied behavior, designs, code, or runtime evidence; do not treat an unspecified state or control as proof that the product lacks it. Put consequential unknowns under assumptions, open questions, or missing validation unless a required release gate is itself absent. When the task already supplies a bounded surface snapshot, use it directly instead of searching the repository for context that cannot change the finding.
+4. Walk the surface as a user: entry point, happy path, edge states, empty/loading/error states, permissions, destructive actions, and recovery. If no running instance is available, walk the routes, templates, components, and copy that render the surface.
+5. Check clarity, trust, accessibility, privacy disclosure, support burden, and measurement only where they can change the user outcome or release decision. Do not emit the checklist as generic findings.
+6. Separate user regressions from taste, optional future improvements, and missing validation. Make only actionable findings tied to impact.
+7. Review implementation only as needed to validate behavior, state coverage, and accessibility risk.
+8. Recommend the smallest product change that improves user outcome without widening scope unnecessarily.
 
 ## Output
 
@@ -46,12 +47,14 @@ Label likelihood from how exposed and reachable the user path is, separately fro
 
 Keep severity tied to conditional impact rather than evidence certainty. Blocking dispositions require concrete evidence of a reachable risk or a missing required high-risk release gate: cite a file:line or surface reference plus a short quote or paraphrase of the offending line, state, behavior, or validation gap when available. If reachability cannot be supported, keep the severity conditional, lower confidence, and move the item to assumptions or open questions rather than blocking. Recommend a follow-up ticket only when it is independently actionable; state why it can wait and how completion will be verified.
 
-Then include:
+Scale the report to the evidence. A narrow surface with one bounded issue may need only a verdict, one compact finding, and its verification signal. Omit generic accessibility, measurement, support, and process commentary when it neither exposes a concrete risk nor changes the disposition.
+
+Always include the overall verdict. Include the remaining sections only when they carry decision-relevant information:
 
 - Overall verdict: `Block`, `Approve with follow-ups`, or `Approve`; explicitly say `No blocking findings` when appropriate.
-- Workflow summary.
-- Missing states or instrumentation.
-- Release confidence and validation needed.
+- Workflow summary when the path is broader than the findings already show.
+- Missing states or instrumentation that change confidence or disposition.
+- Release confidence and validation still needed.
 
 Example finding:
 

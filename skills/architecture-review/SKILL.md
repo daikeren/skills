@@ -7,17 +7,18 @@ description: Reviews designs, docs, code, dependencies, data models, scaling pat
 
 ## Workflow
 
-1. Start read-only. Inspect the request, architecture docs, relevant code, dependencies, data model, CI/deploy clues, and local instructions.
+1. Start read-only. Inspect the request and only the architecture evidence needed to resolve it. When a complete bounded design, migration plan, or diff is supplied, use it directly; do not search unrelated repository surfaces or run validation commands unless they could change the recommendation.
 2. Stay report-only. Inspect and report findings or recommendations; do not edit code, docs, diagrams, or configuration unless the user explicitly changes the task from review to fix.
 3. Map current architecture before judging it: modules, boundaries, data flow, runtime paths, integrations, trust boundaries, and ownership. Start from entry points, dependency manifests, schema or migration directories, and deploy/CI configuration, and trace at least one primary runtime path end to end.
 4. Evaluate fitness against product goals, expected scale, failure modes, operational burden, security/privacy, cost, and team capacity.
 5. Distinguish current defects or regressions from optional future improvements and missing validation. Prefer fewer, higher-leverage recommendations.
 6. If useful for stakeholders, draw Mermaid diagrams for current/proposed architecture, data flow, sequence, boundaries, risk hotspots, and migration phases. Produce an HTML report file only when the user asks for one, and note that Mermaid blocks need a renderer to display.
 7. Recommend a target shape or migration only when the user asks for a proposed direction or a validated finding requires structural change. When migration is warranted, make it reversible with validation checkpoints and rollback paths; otherwise stop at current-state findings and residual risk.
+8. Scale the review to the decision. When a bounded question can be answered from a few decisive facts, return the recommendation, supporting evidence, material risks, and revisit conditions directly. Do not add diagrams, exhaustive dimension-by-dimension commentary, validation commands, or finding metadata unless they expose a risk, resolve uncertainty, or help the audience act.
 
 ## Output
 
-Return:
+For a substantial review, return the useful subset of:
 
 - Executive summary: decision, confidence, and top risks.
 - Current architecture: concise map of what exists.
@@ -26,7 +27,9 @@ Return:
 
 When the target is a concrete change or release, state `Block`, `Approve with follow-ups`, or `Approve`, and explicitly say `No blocking findings` when appropriate.
 
-Include diagrams when useful or requested: Mermaid blocks inline, or an HTML report file when requested.
+For a narrow decision with no actionable defect, a concise recommendation and rationale are sufficient. Include diagrams only when requested or when they materially clarify relationships that prose would obscure: Mermaid blocks inline, or an HTML report file when requested.
+
+Use severity, likelihood, confidence, disposition, and defect-type metadata for actionable findings or missing release validation. Do not manufacture a finding wrapper around an advisory recommendation, an accepted tradeoff, or a no-change conclusion merely to fill the template.
 
 Return these only when the user requests them or a finding requires structural change:
 

@@ -1,6 +1,6 @@
 {
   "skill": "product-surface-review",
-  "version": 2,
+  "version": 5,
   "purpose": "Check that product reviews focus on workflow, clarity, states, accessibility, and trust.",
   "positivePrompts": [
     "Before release, walk through what a new admin sees when billing settings are empty, loading, or fail.",
@@ -13,35 +13,29 @@
   "cases": [
     {
       "id": "billing-settings-flow",
-      "prompt": "Review a billing settings flow with admin-only actions and empty states.",
-      "expectedSkill": "product-surface-review",
-      "checks": [
-        "Walks entry point, happy path, edge states, errors, permissions, and recovery.",
-        "Separates user-impact findings from taste.",
-        "Calls out trust and support burden."
-      ]
-    },
-    {
-      "id": "low-likelihood-recoverable-status",
-      "prompt": "Review this export retry status patch. A late refresh is uncommon; decide whether the issue blocks release or can be tracked separately.",
+      "prompt": "Review the supplied billing settings surface for release readiness.",
       "expectedSkill": "product-surface-review",
       "fixtures": [
-        "low-likelihood-recoverable-ui-diff.md"
+        "product-billing-settings.md"
       ],
       "checks": [
-        "Separates impact severity, evidence confidence, occurrence likelihood, and release disposition.",
-        "Labels the temporary stale badge Non-blocking or Follow-up because the operation succeeds and the UI self-recovers.",
-        {
-          "text": "If recommending a ticket, explains why it can wait and gives a completion or verification signal.",
-          "allowsNotApplicable": true
-        }
+        "Demonstrates consideration of the entry point, happy path, edge states, errors, permissions, and recovery while reporting only decision-relevant gaps.",
+        "Separates user-impact findings from taste.",
+        "Calls out trust and support burden when they are material to the supplied surface.",
+        "Does not present unspecified implementation details as confirmed defects; separates evidence-backed findings from assumptions, open questions, and missing validation."
       ]
     }
   ],
   "traceExpectations": [
     "Findings include severity, confidence, likelihood, disposition, surface, evidence, and recommendation.",
-    "Low-likelihood catastrophic or irreversible outcomes remain blocking when supported by concrete evidence.",
+    {
+      "text": "When a low-likelihood catastrophic or irreversible outcome is supported by concrete evidence, it remains blocking.",
+      "allowsNotApplicable": true
+    },
     "The review states an overall verdict and explicitly says when there are no blocking findings.",
-    "Accessibility and trust are checked when relevant."
+    {
+      "text": "Accessibility and trust are checked when relevant.",
+      "allowsNotApplicable": true
+    }
   ]
 }

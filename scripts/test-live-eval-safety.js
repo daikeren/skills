@@ -9,6 +9,7 @@ const {
   baselineIsolationLevel,
   booleanEnv,
   buildBaselinePrompt,
+  buildPrompt,
   buildComparisonJudgePrompt,
   cleanupActiveTemporaryResources,
   cleanupCaseWorkspace,
@@ -17,6 +18,7 @@ const {
   collectArtifacts,
   configureLimits,
   createCaseWorkspace,
+  createProgressReporter,
   createJudgeWorkspace,
   createTemporaryCodexHome,
   evidenceAppearsInOutput,
@@ -32,6 +34,7 @@ const {
   normalizeJudgeChecks,
   parseCaseFilter,
   resolveCommandOverride,
+  renderSkillBundle,
   runCommand,
   selectCases,
   terminateActiveProcessTrees
@@ -62,6 +65,24 @@ assert.match(
   }),
   /^\[live-eval 2\/5\] example-skill\/example-case baseline:complete 1234ms status=completed$/
 );
+const progressLogRoot = fs.mkdtempSync(path.join(os.tmpdir(), "engineering-judgment-progress-"));
+try {
+  const progressLog = path.join(progressLogRoot, "live-progress.log");
+  const progressOutput = [];
+  const progress = createProgressReporter(1, { write: (line) => progressOutput.push(line) }, progressLog);
+  progress.phase("example-skill/example-case", "candidate", "start");
+  progress.complete(
+    "example-skill/example-case",
+    { status: "completed", judgmentStatus: "pass", comparison: { skillValue: "improved" } },
+    42
+  );
+  assert.equal(progressOutput.length, 2);
+  const persistedProgress = fs.readFileSync(progressLog, "utf8");
+  assert.match(persistedProgress, /\[live-eval 0\/1\] example-skill\/example-case candidate:start/);
+  assert.match(persistedProgress, /\[live-eval 1\/1\].*case:complete 42ms.*value=improved/);
+} finally {
+  fs.rmSync(progressLogRoot, { recursive: true, force: true });
+}
 
 let activeWorkers = 0;
 let maxActiveWorkers = 0;
@@ -95,6 +116,17 @@ assert.throws(
   () => selectCases([], new Set(["review-code/missing"])),
   /did not match: review-code\/missing/
 );
+const bundledSkill = renderSkillBundle("understand-change");
+assert.match(bundledSkill, /Skill file SKILL\.md:/);
+assert.match(bundledSkill, /Skill file references\/html-explainer-contract\.md:/);
+const bundledPrompt = buildPrompt(
+  { skill: "understand-change" },
+  { prompt: "Explain the change." },
+  [],
+  path.join(os.tmpdir(), "live-eval-artifacts")
+);
+assert.match(bundledPrompt, /Use the following Agent Skill bundle:/);
+assert.doesNotMatch(bundledPrompt, /Use the Agent Skill at /);
 assert.deepEqual(evidenceList("“exact runtime output”"), ["exact runtime output"]);
 assert.deepEqual(evidenceList(["\"first quote\"", "second quote"]), ["first quote", "second quote"]);
 assert.equal(evidenceAppearsInOutput("Exact runtime\noutput", ["Exact runtime\noutput"]), true);
@@ -286,9 +318,10 @@ const comparisonPrompt = buildComparisonJudgePrompt(
 assert.match(comparisonPrompt, /contract eval is separate/i);
 assert.match(comparisonPrompt, /Without-skill baseline measurements/);
 assert.match(comparisonPrompt, /untrusted eval evidence/);
-assert.equal(baselineIsolationLevel(null, null), "matched-workspace-and-no-skill-prompt");
-assert.equal(baselineIsolationLevel("codex", null), "isolated-home-and-matched-workspace");
-assert.equal(baselineIsolationLevel("codex", "custom-agent"), "matched-workspace-and-no-skill-prompt");
+assert.match(comparisonPrompt, /task success and missed risks are tied.*regressed rather than neutral/i);
+assert.equal(baselineIsolationLevel(null, null), "matched-workspace-inline-skill-only");
+assert.equal(baselineIsolationLevel("codex", null), "isolated-home-matched-workspace-inline-skill-only");
+assert.equal(baselineIsolationLevel("codex", "custom-agent"), "matched-workspace-inline-skill-only");
 
 let cleanupCalls = 0;
 const removeSignalCleanup = installSignalCleanup(() => {
@@ -357,7 +390,7 @@ for (const signal of ["SIGHUP", "SIGINT", "SIGTERM"]) {
 const mainSignalRoot = fs.mkdtempSync(path.join(os.tmpdir(), "engineering-judgment-main-signal-"));
 let mainRunnerWorkspace;
 try {
-  mainRunnerWorkspace = createCaseWorkspace();
+  mainRunnerWorkspace = createCaseWorkspace({ includeEvalSurfaces: true });
   const readyMarker = path.join(mainSignalRoot, "agent-ready");
   const activeCommandMarker = path.join(mainSignalRoot, "active-command-finished");
   const blockingAgent = path.join(mainSignalRoot, "blocking-agent.js");
@@ -410,7 +443,7 @@ try {
   fs.rmSync(mainSignalRoot, { recursive: true, force: true });
 }
 
-const comparativeWorkspace = createCaseWorkspace();
+const comparativeWorkspace = createCaseWorkspace({ includeEvalSurfaces: true });
 try {
   const mockRunner = path.join(comparativeWorkspace.tempRoot, "mock-live-agent.js");
   fs.writeFileSync(
@@ -455,7 +488,7 @@ try {
         ...process.env,
         LIVE_EVAL_COMMAND: mockRunner,
         LIVE_EVAL_JUDGE_COMMAND: mockRunner,
-        LIVE_EVAL_CASES: "route-work/direct-low-risk-path,understand-change/small-change-uses-chat",
+        LIVE_EVAL_CASES: "route-work/ambiguous-routing,understand-change/small-change-uses-chat",
         LIVE_EVAL_COMPARE_BASELINE: "1",
         LIVE_EVAL_CONCURRENCY: "2",
         LIVE_EVAL_TIMEOUT_MS: "1000"
@@ -468,7 +501,7 @@ try {
     `comparative runner failed:\n${comparativeResult.stdout || ""}\n${comparativeResult.stderr || ""}`
   );
   assert.match(comparativeResult.stderr, /Live eval starting 2 case\(s\) with concurrency 2\./);
-  assert.match(comparativeResult.stderr, /route-work\/direct-low-risk-path candidate:start/);
+  assert.match(comparativeResult.stderr, /route-work\/ambiguous-routing candidate:start/);
   assert.match(comparativeResult.stderr, /understand-change\/small-change-uses-chat baseline:complete/);
   assert.match(comparativeResult.stderr, /contract-judge:complete \d+ms status=completed/);
   assert.match(comparativeResult.stderr, /comparison-judge:complete \d+ms status=completed value=neutral/);
@@ -481,7 +514,7 @@ try {
   assert.equal(comparativeOutput.results.length, 2);
   assert.deepEqual(
     comparativeOutput.results.map((item) => `${item.skill}/${item.id}`),
-    ["route-work/direct-low-risk-path", "understand-change/small-change-uses-chat"]
+    ["route-work/ambiguous-routing", "understand-change/small-change-uses-chat"]
   );
   assert.ok(comparativeOutput.results.every((item) => item.judgmentStatus === "pass"));
   assert.ok(comparativeOutput.results.every((item) => item.comparison.status === "completed"));
@@ -489,7 +522,7 @@ try {
   assert.ok(comparativeOutput.results.every((item) => item.comparison.baseline.status === "completed"));
   assert.equal(
     comparativeOutput.results[0].comparison.baseline.isolation,
-    "matched-workspace-and-no-skill-prompt"
+    "matched-workspace-inline-skill-only"
   );
   assert.equal(comparativeOutput.results[0].comparison.candidate.measurements.toolCalls, null);
 } finally {
@@ -504,9 +537,9 @@ try {
   assert.equal(path.dirname(caseWorkspace.artifactDir), caseWorkspace.tempRoot);
   assert.notEqual(caseWorkspace.artifactDir, caseWorkspace.workspace);
   assert.ok(fs.existsSync(caseWorkspace.artifactDir));
-  assert.ok(fs.existsSync(path.join(caseWorkspace.workspace, "skills", "implement-change", "SKILL.md")));
+  assert.equal(fs.existsSync(path.join(caseWorkspace.workspace, "skills")), false);
   assert.equal(fs.existsSync(path.join(caseWorkspace.workspace, ".git")), false);
-  assert.equal(fs.existsSync(path.join(caseWorkspace.workspace, "evals", "results")), false);
+  assert.equal(fs.existsSync(path.join(caseWorkspace.workspace, "evals")), false);
 
   const markerName = ".live-eval-isolation-marker";
   fs.writeFileSync(path.join(caseWorkspace.workspace, markerName), "isolated\n");
@@ -555,7 +588,7 @@ const baselineWorkspace = createCaseWorkspace({ withoutSkills: true });
 try {
   assert.ok(fs.existsSync(path.join(baselineWorkspace.workspace, "AGENTS.md")));
   assert.ok(fs.existsSync(path.join(baselineWorkspace.workspace, "package.json")));
-  assert.ok(fs.existsSync(path.join(baselineWorkspace.workspace, "evals", "fixtures")));
+  assert.equal(fs.existsSync(path.join(baselineWorkspace.workspace, "evals")), false);
   assert.equal(fs.existsSync(path.join(baselineWorkspace.workspace, "skills")), false);
   assert.equal(fs.existsSync(path.join(baselineWorkspace.workspace, "commands")), false);
   assert.equal(fs.existsSync(path.join(baselineWorkspace.workspace, ".claude")), false);

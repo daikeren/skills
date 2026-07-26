@@ -1,6 +1,6 @@
 {
   "skill": "to-tickets",
-  "version": 2,
+  "version": 3,
   "purpose": "Check that specs become independently mergeable and releasable tickets.",
   "positivePrompts": [
     "Break this spec into releasable tickets.",
@@ -36,6 +36,7 @@
         "Maps the runtime path in execution order and keeps broker publication single-attempt while assigning delivery retry and dead-letter behavior to the existing worker and queue boundaries.",
         "Names only the key types or signatures, meaningful structural delta, invariants, and verification seams needed to constrain implementation.",
         "Surfaces and corrects the draft plan's API-owned retry, API-owned dead-letter, and at-most-once delivery assumptions using the supplied repository evidence.",
+        "Does not claim the domain side effect is at-most-once without resolving or blocking on the crash window between claim acquisition, the side effect, and claim completion.",
         "Turns the resulting shape into tracer-bullet vertical tickets rather than API, queue, worker, and storage layer tickets."
       ]
     },

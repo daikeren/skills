@@ -1,6 +1,6 @@
 {
   "skill": "prototype",
-  "version": 1,
+  "version": 6,
   "purpose": "Check that prototype work stays disposable and evidence-oriented before or alongside production work.",
   "positivePrompts": [
     "Build a throw-away prototype to test whether this workflow feels right.",
@@ -33,22 +33,28 @@
       "id": "disposable-ui-flow",
       "prompt": "Explore three possible UI flows without committing to production code.",
       "expectedSkill": "prototype",
+      "fixtures": [
+        "prototype-invoice-search.md"
+      ],
       "checks": [
         "States the prototype question and learning target.",
-        "Uses isolated or reversible artifacts.",
+        "Produces an isolated or reversible artifact with enough interaction to compare the three UI flows rather than substituting a hypothetical walkthrough.",
         "Reports an exact Evidence/Observation before Learned.",
         "Ends with learned, discard, and follow-up sections.",
-        "Does not claim the prototype proved anything without a concrete observation."
+        "Does not treat authored flow steps or build validation as observed user evidence, and does not claim a preferred flow without a concrete interaction observation."
       ]
     },
     {
       "id": "inconclusive-scratch-demo",
-      "prompt": "A scratch demo exists, but nobody recorded its output; determine what it actually proves before any production work.",
+      "prompt": "Run the supplied scratch retry demo and determine what its observed behavior actually proves before any production work.",
       "expectedSkill": "prototype",
+      "fixtures": [
+        "scratch-retry-demo.js"
+      ],
       "checks": [
-        "Runs or requests one concrete observation before drawing a conclusion.",
-        "Labels the prototype inconclusive if evidence cannot be produced.",
-        "Does not treat the existence of demo code as proof."
+        "Runs the supplied demo and cites the observed attempt count before drawing a conclusion.",
+        "Separates what the observation proves from what remains inconclusive about provider-side duplicate effects.",
+        "Does not treat the existence of demo code or one local run as production proof."
       ]
     },
     {
@@ -56,8 +62,10 @@
       "prompt": "We agree on the search goal, but cannot tell from discussion whether grouped results, filters, or a flat list will feel right. Choose the next useful step and carry it out without committing to production code.",
       "expectedSkill": "prototype",
       "checks": [
-        "Explains that interaction behavior requires a higher-fidelity artifact than further discussion or specification.",
-        "Defines a focused learning target and compares only the smallest useful UI variants.",
+        "Uses an interactive artifact rather than further discussion or specification because the unresolved question depends on exercising interaction behavior.",
+        "Defines a focused learning target and compares only the smallest useful UI variants using shared representative data or tasks.",
+        "Makes the variants meaningfully exercisable and exposes a minimal observation signal that can discriminate among them.",
+        "Prioritizes cheap objective per-run signals and adds order, notes, export, or tracing only when they address a named comparison risk.",
         "Keeps the artifact disposable and ties the resulting decision to concrete user-flow observations."
       ]
     },
@@ -90,11 +98,20 @@
     }
   ],
   "traceExpectations": [
-    "The fidelity gate keeps questions in discussion or specification when words and existing evidence are enough.",
+    {
+      "text": "When words and existing evidence are enough, the fidelity gate keeps the question in discussion or specification.",
+      "allowsNotApplicable": true
+    },
     "Questions that depend on interaction feel, state behavior, data shape, or integration feasibility route to a prototype.",
-    "Disposable verification can challenge material frontend, backend, data, integration, or operational claims alongside production work without replacing existing prototype exploration.",
-    "Consequential claims use an independent oracle, invariant, known-good result, or separately derived comparison rather than generated self-confirmation.",
-    "Prototype verification includes a concrete observation.",
+    {
+      "text": "When retained production work is in scope, disposable verification can challenge material frontend, backend, data, integration, or operational claims without replacing existing prototype exploration.",
+      "allowsNotApplicable": true
+    },
+    {
+      "text": "When a consequential claim is tested, it uses an independent oracle, invariant, known-good result, or separately derived comparison rather than generated self-confirmation.",
+      "allowsNotApplicable": true
+    },
+    "Prototype verification records a concrete observation appropriate to the claim; build validation may establish that an artifact works while leaving an interaction decision inconclusive.",
     "Learned claims are tied directly to Evidence/Observation.",
     "Production hardening is explicitly deferred."
   ]

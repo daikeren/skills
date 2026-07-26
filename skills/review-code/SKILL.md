@@ -22,7 +22,7 @@ description: Performs findings-first review of code diffs, PRs, patches, or unco
    - Operations and verification: migrations, rollout, rollback, observability, queues, retries, external services, cost, tests, release gates, and monitoring.
    - State and temporal correctness, when relevant: lifecycle precedence, event ordering, stale ownership, canonical identity, previous episodes, alternate matching paths, partial data, and whether fallbacks fail safely.
    For agent discoverability, inspect only newly introduced or changed cross-file symbol names. Report names that are misleading, overly generic, or inconsistent with the repository's established term for the same concept when the ambiguity is concrete. Do not expand this check into file layout, types, comments, or untouched names, and do not request broad renames. Treat naming-only findings as non-blocking unless concrete correctness or compatibility impact supports a stronger disposition.
-10. If subagents are unavailable or the diff is tiny, run the same lenses as isolated local passes and note that fallback briefly after the findings.
+10. If subagents are unavailable or the diff is tiny, run the relevant lenses as isolated local passes. Do not narrate lens coverage or fallback mechanics when they add no decision-relevant information to a narrow review.
 11. Before final aggregation, check relevant repo-local context or lessons if a lightweight store is evident, such as review notes, project memory, ADRs, or a public lessons log. Apply only lessons that match the current review target and are supported by repo evidence; do not block if no store exists.
 12. Aggregate the reports. Verify each candidate finding against the code or diff, deduplicate overlaps, drop speculative issues that lack impact, classify missing validation separately from current defects, and rerank blocking findings before non-blocking findings, then by severity. Unlike single-axis review, `review-code` should integrate the lenses into one findings-first risk order while preserving useful lens context.
 13. Avoid assuming a specific host, CI, framework, issue tracker, or deployment path. Infer tooling from repo evidence.
@@ -75,7 +75,11 @@ Assign an explicit disposition to every finding:
 
 Do not infer disposition from severity or likelihood alone. A low-likelihood issue remains blocking when the consequence is catastrophic or difficult to contain or recover from, including authorization or privacy breaches, cross-tenant exposure, data loss, duplicate or incorrect financial effects, destructive migrations, or irreversible actions. A low-likelihood, limited, recoverable degraded-UX case is usually non-blocking or a follow-up. Missing validation blocks only when it is a required release gate or leaves a credible high-consequence risk unresolved.
 
-Each finding should include severity, confidence, likelihood, disposition, type (`current defect/regression`, `missing validation`, or `optional improvement`), evidence, impact, and the smallest credible fix direction. Keep severity tied to conditional impact rather than evidence certainty. All blocking dispositions require concrete evidence of a reachable risk or a missing required high-risk release gate: cite a file:line or surface reference plus a short quote or paraphrase of the offending line, state, behavior, or validation gap when available. If reachability cannot be supported, keep the severity conditional, lower confidence, and move the item to assumptions or open questions rather than blocking. Recommend a follow-up ticket only when the work is independently actionable; state why it can wait and give a completion or verification signal. Do not turn low-confidence speculation into ticket backlog. Example finding:
+Each finding must communicate the impact, evidence confidence, occurrence likelihood, release disposition, evidence, and smallest credible fix direction when those dimensions affect judgment. Labels are a compact aid, not mandatory ceremony: for a bounded one-finding review where the dimensions are obvious and uncontested, state the verdict, reachable path, impact, fix, and verification in one compact finding. Use explicit severity, confidence, likelihood, disposition, and type (`current defect/regression`, `missing validation`, or `optional improvement`) when they prevent ambiguity, calibrate a disputed risk, or help aggregate multiple findings. Keep severity tied to conditional impact rather than evidence certainty. All blocking dispositions require concrete evidence of a reachable risk or a missing required high-risk release gate: cite a file:line or surface reference plus a short quote or paraphrase of the offending line, state, behavior, or validation gap when available. If reachability cannot be supported, keep the severity conditional, lower confidence, and move the item to assumptions or open questions rather than blocking. Recommend a follow-up ticket only when the work is independently actionable; state why it can wait and give a completion or verification signal. Do not turn low-confidence speculation into ticket backlog.
+
+Scale the presentation to the target. One clear finding may be one compact paragraph or bullet containing the required judgment; it does not need repeated headings, a lens-coverage summary, or generic validation suggestions that do not change the verdict. Spend detail on causal evidence, impact, and the fix rather than on review-process narration. Example finding:
+
+When the user asks only for the release disposition of one bounded finding, answer with the verdict and one compact evidence-impact-fix paragraph. Omit classification labels, coverage summaries, change summaries, and open-question sections unless one of them changes or qualifies the disposition.
 
 ```text
 [P1][High confidence][Low likelihood][Blocking] api/routes.py:88 - Admin export
@@ -88,10 +92,10 @@ enforce the admin permission and add a non-admin 403 test.
 Then include:
 
 - Explicitly say `No blocking findings` when the verdict is not `Block`.
-- Open questions or assumptions.
-- Coverage: target reviewed, spec or intent source, standards sources, and subagents or local passes used.
+- Open questions or assumptions that affect a finding or readiness.
+- For a non-trivial review, concise coverage: target reviewed, spec or intent source, standards sources, and subagents or local passes used. Omit this process summary for a narrow review when it adds no decision value.
 - Change summary, only after findings.
-- Verification reviewed or missing.
+- Verification reviewed or missing when it affects confidence or release readiness.
 
 ## Subagent Briefs
 

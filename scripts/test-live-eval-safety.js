@@ -16,12 +16,14 @@ const {
   cleanupCaseWorkspace,
   cleanupJudgeWorkspace,
   cleanupTemporaryCodexHome,
+  cleanupTrialCodexHomes,
   collectArtifacts,
   configureLimits,
   createCaseWorkspace,
   createProgressReporter,
   createJudgeWorkspace,
   createTemporaryCodexHome,
+  createTrialCodexHomes,
   evidenceAppearsInOutput,
   evidenceList,
   expectationsFor,
@@ -30,6 +32,7 @@ const {
   installSignalCleanup,
   judgmentStatus,
   mapWithConcurrency,
+  materializeFixtures,
   measurementsFor,
   normalizeCommandResult,
   normalizeComparison,
@@ -58,6 +61,22 @@ assert.deepEqual(
   ]
 );
 assert.throws(() => parseCaseFilter("implement-change"), /skill\/case IDs/);
+
+const selectableCaseIds = new Set();
+for (const file of fs.readdirSync(path.join(root, "evals", "cases"))) {
+  if (!file.endsWith(".json")) continue;
+  const data = JSON.parse(fs.readFileSync(path.join(root, "evals", "cases", file), "utf8"));
+  for (const item of data.cases) selectableCaseIds.add(`${data.skill}/${item.id}`);
+}
+for (const readme of ["README.md", "README.zh-TW.md"]) {
+  const text = fs.readFileSync(path.join(root, readme), "utf8");
+  for (const match of text.matchAll(/LIVE_EVAL_CASES=([^\s\\]+)/g)) {
+    for (const selector of match[1].split(",")) {
+      assert.ok(selectableCaseIds.has(selector), `${readme} documents unknown live eval case ${selector}`);
+    }
+  }
+}
+
 assert.match(
   formatProgressLine({
     completed: 2,
@@ -201,6 +220,53 @@ const renderedTrace = renderExecutionTrace(normalizedCodex.telemetry.executionTr
 assert.match(renderedTrace, /npm test/);
 assert.match(renderedTrace, /src\/example\.js/);
 assert.doesNotMatch(renderedTrace, /secret|hunter2/);
+
+const noFinalMessageSecret = "raw-command-output-secret";
+const noFinalMessageJsonl = [
+  JSON.stringify({
+    type: "item.completed",
+    item: {
+      type: "command_execution",
+      command: `PRIVATE_TOKEN=${noFinalMessageSecret} npm test`,
+      aggregated_output: noFinalMessageSecret,
+      exit_code: 1,
+      status: "failed"
+    }
+  }),
+  JSON.stringify({ type: "turn.failed", error: { message: noFinalMessageSecret } })
+].join("\n");
+const normalizedNoFinalMessage = normalizeCommandResult(
+  {
+    status: 1,
+    output: noFinalMessageJsonl,
+    diagnostics: noFinalMessageJsonl,
+    stderr: noFinalMessageSecret,
+    durationMs: 10,
+    stdoutBytes: Buffer.byteLength(noFinalMessageJsonl)
+  },
+  { outputFormat: "codex-jsonl" }
+);
+assert.equal(normalizedNoFinalMessage.output, "");
+assert.equal(normalizedNoFinalMessage.diagnostics, "");
+assert.equal(normalizedNoFinalMessage.stderr, "");
+assert.doesNotMatch(JSON.stringify(normalizedNoFinalMessage), new RegExp(noFinalMessageSecret));
+
+const malformedStructuredOutput = normalizeCommandResult(
+  {
+    status: 1,
+    output: noFinalMessageSecret,
+    diagnostics: noFinalMessageSecret,
+    stderr: noFinalMessageSecret,
+    durationMs: 10,
+    stdoutBytes: Buffer.byteLength(noFinalMessageSecret)
+  },
+  { outputFormat: "codex-jsonl" }
+);
+assert.equal(malformedStructuredOutput.output, "");
+assert.equal(malformedStructuredOutput.diagnostics, "");
+assert.equal(malformedStructuredOutput.stderr, "");
+assert.doesNotMatch(JSON.stringify(malformedStructuredOutput), new RegExp(noFinalMessageSecret));
+
 assert.match(sanitizeTraceText("https://user:pass@example.com"), /<redacted>@example\.com/);
 assert.doesNotMatch(sanitizeTraceText("curl -H 'Authorization: Bearer abcdefghijk' https://example.com"), /abcdefghijk/);
 for (const unsafeCommand of [
@@ -403,6 +469,7 @@ assert.equal(cleanupCalls, 0);
 
 const fakeCodexSource = fs.mkdtempSync(path.join(os.tmpdir(), "engineering-judgment-codex-source-"));
 let fakeCodexHome;
+let trialCodexHomes;
 try {
   fs.writeFileSync(path.join(fakeCodexSource, "auth.json"), "{\"token\":\"test-only\"}\n", { mode: 0o600 });
   fakeCodexHome = createTemporaryCodexHome(fakeCodexSource);
@@ -410,11 +477,19 @@ try {
   assert.equal(fs.readFileSync(path.join(fakeCodexHome, "auth.json"), "utf8"), "{\"token\":\"test-only\"}\n");
   assert.equal(fs.statSync(fakeCodexHome).mode & 0o777, 0o700);
   assert.equal(fs.statSync(path.join(fakeCodexHome, "auth.json")).mode & 0o777, 0o600);
+  trialCodexHomes = createTrialCodexHomes(true, fakeCodexSource);
+  assert.deepEqual(Object.keys(trialCodexHomes).sort(), ["baseline", "candidate", "comparisonJudge", "contractJudge"]);
+  assert.equal(new Set(Object.values(trialCodexHomes)).size, 4);
+  for (const home of Object.values(trialCodexHomes)) {
+    assert.equal(fs.readFileSync(path.join(home, "auth.json"), "utf8"), "{\"token\":\"test-only\"}\n");
+  }
 } finally {
+  cleanupTrialCodexHomes(trialCodexHomes);
   cleanupTemporaryCodexHome(fakeCodexHome);
   fs.rmSync(fakeCodexSource, { recursive: true, force: true });
 }
 assert.equal(fs.existsSync(fakeCodexHome), false);
+assert.ok(Object.values(trialCodexHomes).every((home) => !fs.existsSync(home)));
 
 for (const signal of ["SIGHUP", "SIGINT", "SIGTERM"]) {
   const signalCleanupRoot = fs.mkdtempSync(path.join(os.tmpdir(), "engineering-judgment-signal-cleanup-"));
@@ -578,6 +653,23 @@ try {
   assert.match(comparativeResult.stderr, /contract-judge:complete \d+ms status=completed/);
   assert.match(comparativeResult.stderr, /comparison-judge:complete \d+ms status=completed value=neutral/);
   assert.match(comparativeResult.stderr, /\[live-eval 6\/6\].*case:complete/);
+  const trialOnePrefix = "route-work/ambiguous-routing [trial 1/3]";
+  const trialTwoPrefix = "route-work/ambiguous-routing [trial 2/3]";
+  const phasePosition = (prefix, phase) => comparativeResult.stderr.indexOf(`${prefix} ${phase}:start`);
+  for (const [prefix, phase] of [
+    [trialOnePrefix, "candidate"],
+    [trialOnePrefix, "baseline"],
+    [trialOnePrefix, "contract-judge"],
+    [trialTwoPrefix, "baseline"],
+    [trialTwoPrefix, "candidate"],
+    [trialTwoPrefix, "contract-judge"]
+  ]) {
+    assert.ok(phasePosition(prefix, phase) >= 0, `missing ${prefix} ${phase}:start`);
+  }
+  assert.ok(phasePosition(trialOnePrefix, "candidate") < phasePosition(trialOnePrefix, "baseline"));
+  assert.ok(phasePosition(trialOnePrefix, "baseline") < phasePosition(trialOnePrefix, "contract-judge"));
+  assert.ok(phasePosition(trialTwoPrefix, "baseline") < phasePosition(trialTwoPrefix, "candidate"));
+  assert.ok(phasePosition(trialTwoPrefix, "candidate") < phasePosition(trialTwoPrefix, "contract-judge"));
   const comparativeOutput = JSON.parse(
     fs.readFileSync(path.join(comparativeWorkspace.workspace, "evals", "results", "live-latest.json"), "utf8")
   );
@@ -604,6 +696,14 @@ try {
   assert.deepEqual(
     comparativeOutput.results.slice(0, 3).map((item) => item.comparison.presentationOrder.A),
     ["candidate", "baseline", "candidate"]
+  );
+  assert.deepEqual(
+    comparativeOutput.results.slice(0, 3).map((item) => item.comparison.generationOrder),
+    [
+      ["candidate", "baseline"],
+      ["baseline", "candidate"],
+      ["candidate", "baseline"]
+    ]
   );
   assert.equal(comparativeOutput.aggregates.length, 2);
   assert.ok(comparativeOutput.aggregates.every((item) => item.comparison.majoritySkillValue === "neutral"));
@@ -674,6 +774,7 @@ try {
 assert.equal(fs.existsSync(caseWorkspace.tempRoot), false);
 
 const baselineWorkspace = createCaseWorkspace({ withoutSkills: true });
+const fixtureCandidateWorkspace = createCaseWorkspace();
 try {
   assert.ok(fs.existsSync(path.join(baselineWorkspace.workspace, "AGENTS.md")));
   assert.ok(fs.existsSync(path.join(baselineWorkspace.workspace, "package.json")));
@@ -683,10 +784,24 @@ try {
   assert.equal(fs.existsSync(path.join(baselineWorkspace.workspace, ".claude")), false);
   assert.equal(fs.existsSync(path.join(baselineWorkspace.workspace, ".codex-plugin")), false);
   assert.ok(fs.existsSync(baselineWorkspace.artifactDir));
+  const selectedFixtures = [{ name: "nested/executable-proof.js", content: "console.log('proof')\n" }];
+  materializeFixtures(selectedFixtures, baselineWorkspace.workspace);
+  materializeFixtures(selectedFixtures, fixtureCandidateWorkspace.workspace);
+  const fixtureRelativePath = path.join("evals", "fixtures", "nested", "executable-proof.js");
+  assert.equal(
+    fs.readFileSync(path.join(baselineWorkspace.workspace, fixtureRelativePath), "utf8"),
+    fs.readFileSync(path.join(fixtureCandidateWorkspace.workspace, fixtureRelativePath), "utf8")
+  );
+  assert.throws(
+    () => materializeFixtures([{ name: "../../outside.js", content: "unsafe" }], baselineWorkspace.workspace),
+    /outside the task workspace/
+  );
 } finally {
   cleanupCaseWorkspace(baselineWorkspace);
+  cleanupCaseWorkspace(fixtureCandidateWorkspace);
 }
 assert.equal(fs.existsSync(baselineWorkspace.tempRoot), false);
+assert.equal(fs.existsSync(fixtureCandidateWorkspace.tempRoot), false);
 
 const judgeWorkspace = createJudgeWorkspace();
 try {

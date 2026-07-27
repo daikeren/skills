@@ -324,6 +324,29 @@ function cleanupTemporaryCodexHome(home) {
   }
 }
 
+function createTrialCodexHomes(comparisonEnabled, sourceHome) {
+  const roles = comparisonEnabled
+    ? ["candidate", "baseline", "contractJudge", "comparisonJudge"]
+    : ["candidate", "contractJudge"];
+  const homes = {};
+  try {
+    for (const role of roles) {
+      homes[role] = createTemporaryCodexHome(sourceHome);
+    }
+    return homes;
+  } catch (error) {
+    cleanupTrialCodexHomes(homes);
+    throw error;
+  }
+}
+
+function cleanupTrialCodexHomes(homes) {
+  if (!homes || typeof homes !== "object") return;
+  for (const home of Object.values(homes)) {
+    cleanupTemporaryCodexHome(home);
+  }
+}
+
 function cleanupActiveTemporaryResources() {
   const errors = [];
   const cleanupPaths = (paths) => {
@@ -397,6 +420,18 @@ function caseFixtures(item, workspace) {
       content: readText(full)
     };
   });
+}
+
+function materializeFixtures(fixtures, workspace) {
+  const fixtureRoot = path.resolve(workspace, "evals", "fixtures");
+  for (const fixture of fixtures) {
+    const target = path.resolve(fixtureRoot, fixture.name);
+    if (target !== fixtureRoot && !target.startsWith(`${fixtureRoot}${path.sep}`)) {
+      throw new Error(`${fixture.name}: fixture target resolves outside the task workspace`);
+    }
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, fixture.content, { mode: 0o600 });
+  }
 }
 
 function renderFixtures(fixtures) {
@@ -864,28 +899,29 @@ function normalizeCommandResult(result, cmd) {
         telemetry.tokens = event.usage;
       }
     }
-    if (events.length > 0) {
-      if (executionTraceTruncated) {
-        telemetry.executionTrace.push({ type: "trace_truncated", status: "bounded-limit" });
-      }
-      telemetry.toolCallBreakdown = toolCallBreakdown;
-      telemetry.toolCalls = unknownCompletedItemTypes.size === 0
-        ? Object.values(toolCallBreakdown).reduce((sum, count) => sum + count, 0)
-        : null;
-      return {
-        ...result,
-        output: messages.length > 0 ? messages[messages.length - 1] : result.output,
-        telemetry
-      };
+    if (executionTraceTruncated) {
+      telemetry.executionTrace.push({ type: "trace_truncated", status: "bounded-limit" });
     }
+    telemetry.toolCallBreakdown = toolCallBreakdown;
+    telemetry.toolCalls = events.length > 0 && unknownCompletedItemTypes.size === 0
+      ? Object.values(toolCallBreakdown).reduce((sum, count) => sum + count, 0)
+      : null;
+    return {
+      ...result,
+      output: messages.length > 0 ? messages[messages.length - 1] : "",
+      diagnostics: "",
+      stderr: "",
+      telemetry
+    };
   }
 
   if (cmd.outputFormat === "claude-json") {
     const parsed = parseFirstJsonObject(result.output);
     if (parsed && typeof parsed.result === "string") {
       telemetry.tokens = parsed.usage && typeof parsed.usage === "object" ? parsed.usage : null;
-      return { ...result, output: parsed.result, telemetry };
+      return { ...result, output: parsed.result, diagnostics: "", stderr: "", telemetry };
     }
+    return { ...result, output: "", diagnostics: "", stderr: "", telemetry };
   }
 
   return { ...result, telemetry };
@@ -1129,7 +1165,7 @@ async function judgeOutput(data, item, fixtures, artifacts, output, executionTra
         command: cmd.command,
         source: cmd.source,
         error: result.error,
-        outputPreview: result.diagnostics.slice(0, 2000)
+        outputPreview: ""
       },
       checks: reviewChecks(expectations, "Judge command failed or was unavailable.")
     };
@@ -1291,7 +1327,7 @@ async function judgeComparison(data, item, fixtures, candidate, baseline, codexH
         command: cmd.command,
         source: cmd.source,
         error: result.error,
-        outputPreview: result.diagnostics.slice(0, 2000)
+        outputPreview: ""
       }
     };
   }
@@ -1317,6 +1353,7 @@ async function runWithoutSkillBaseline(item, fixtures, codexHome = null) {
   let caseWorkspace;
   try {
     caseWorkspace = createCaseWorkspace({ withoutSkills: true });
+    materializeFixtures(fixtures, caseWorkspace.workspace);
     const prompt = buildBaselinePrompt(item, fixtures, caseWorkspace.artifactDir);
     const cmd = commandFor(prompt, "agent", codexHome);
     let result = await runCommand(cmd, caseWorkspace.workspace);
@@ -1329,8 +1366,8 @@ async function runWithoutSkillBaseline(item, fixtures, codexHome = null) {
         commandError: result.error,
         artifacts: [],
         measurements: measurementsFor(result, []),
-        output: result.output,
-        outputPreview: result.diagnostics.slice(0, 4000)
+        output: "",
+        outputPreview: ""
       };
     }
     const artifacts = collectArtifacts(caseWorkspace.artifactDir, maxArtifactBytes, caseWorkspace.tempRoot);
@@ -1498,7 +1535,7 @@ function aggregateResults(results, comparisonEnabled = compareBaseline) {
 }
 
 async function runCase(data, item, options = {}) {
-  const { codexHome = null, onPhase = () => {}, trial = 1 } = options;
+  const { codexHomes = {}, onPhase = () => {}, trial = 1 } = options;
   let caseWorkspace;
   try {
     caseWorkspace = createCaseWorkspace();
@@ -1522,6 +1559,7 @@ async function runCase(data, item, options = {}) {
     let fixtures;
     try {
       fixtures = caseFixtures(item, root);
+      materializeFixtures(fixtures, caseWorkspace.workspace);
     } catch (error) {
       const expectations = expectationsFor(data, item);
       return {
@@ -1539,8 +1577,24 @@ async function runCase(data, item, options = {}) {
     }
 
     const expectations = expectationsFor(data, item);
+    const candidateFirst = !compareBaseline || trial % 2 === 1;
+    let baseline = null;
+    const generateBaseline = async () => {
+      onPhase("baseline", "start");
+      const generated = await runWithoutSkillBaseline(item, fixtures, codexHomes.baseline);
+      onPhase("baseline", "complete", {
+        durationMs: generated.measurements && generated.measurements.durationMs,
+        detail: `status=${generated.status}`
+      });
+      return generated;
+    };
+
+    if (compareBaseline && !candidateFirst) {
+      baseline = await generateBaseline();
+    }
+
     const prompt = buildPrompt(data, item, fixtures, caseWorkspace.artifactDir);
-    const cmd = commandFor(prompt, "agent", codexHome);
+    const cmd = commandFor(prompt, "agent", codexHomes.candidate);
     onPhase("candidate", "start");
     let result = await runCommand(cmd, caseWorkspace.workspace);
     result = normalizeCommandResult(result, cmd);
@@ -1564,7 +1618,7 @@ async function runCase(data, item, options = {}) {
         fixtures: fixtures.map((fixture) => fixture.name),
         judge: { status: "not-run" },
         checks: reviewChecks(expectations, "Agent command failed before judging."),
-        outputPreview: result.diagnostics.slice(0, 4000)
+        outputPreview: ""
       };
     }
 
@@ -1587,32 +1641,48 @@ async function runCase(data, item, options = {}) {
       };
     }
 
-    onPhase("contract-judge", "start");
-    const contractJudgeStartedAt = Date.now();
-    const executionTrace = result.telemetry ? result.telemetry.executionTrace : [];
-    const judged = await judgeOutput(data, item, fixtures, artifacts, output, executionTrace, expectations, codexHome);
-    onPhase("contract-judge", "complete", {
-      durationMs: Date.now() - contractJudgeStartedAt,
-      detail: `status=${judged.judge.status}`
-    });
     const candidate = {
       output,
       artifacts,
       measurements: measurementsFor(result, artifacts)
     };
+
+    if (compareBaseline && candidateFirst) {
+      baseline = await generateBaseline();
+    }
+
+    onPhase("contract-judge", "start");
+    const contractJudgeStartedAt = Date.now();
+    const executionTrace = result.telemetry ? result.telemetry.executionTrace : [];
+    const judged = await judgeOutput(
+      data,
+      item,
+      fixtures,
+      artifacts,
+      output,
+      executionTrace,
+      expectations,
+      codexHomes.contractJudge
+    );
+    onPhase("contract-judge", "complete", {
+      durationMs: Date.now() - contractJudgeStartedAt,
+      detail: `status=${judged.judge.status}`
+    });
+
     let comparison = { enabled: false };
     if (compareBaseline) {
-      onPhase("baseline", "start");
-      const baseline = await runWithoutSkillBaseline(item, fixtures, codexHome);
-      onPhase("baseline", "complete", {
-        durationMs: baseline.measurements && baseline.measurements.durationMs,
-        detail: `status=${baseline.status}`
-      });
       if (baseline.status === "completed") {
         onPhase("comparison-judge", "start");
         const comparisonJudgeStartedAt = Date.now();
-        const candidateFirst = trial % 2 === 1;
-        const compared = await judgeComparison(data, item, fixtures, candidate, baseline, codexHome, candidateFirst);
+        const compared = await judgeComparison(
+          data,
+          item,
+          fixtures,
+          candidate,
+          baseline,
+          codexHomes.comparisonJudge,
+          candidateFirst
+        );
         onPhase("comparison-judge", "complete", {
           durationMs: Date.now() - comparisonJudgeStartedAt,
           detail: `status=${compared.status} value=${compared.skillValue}`
@@ -1623,6 +1693,7 @@ async function runCase(data, item, options = {}) {
           skillValue: compared.skillValue,
           summary: compared.summary,
           dimensions: compared.dimensions,
+          generationOrder: candidateFirst ? ["candidate", "baseline"] : ["baseline", "candidate"],
           presentationOrder: compared.presentationOrder,
           judge: compared.judge,
           candidate: { measurements: candidate.measurements },
@@ -1643,6 +1714,7 @@ async function runCase(data, item, options = {}) {
           skillValue: "review",
           summary: "Without-skill baseline could not be completed.",
           dimensions: normalizeComparison(null).dimensions,
+          generationOrder: candidateFirst ? ["candidate", "baseline"] : ["baseline", "candidate"],
           candidate: { measurements: candidate.measurements },
           baseline: {
             status: baseline.status,
@@ -1760,14 +1832,14 @@ async function main() {
       const baseKey = `${data.skill}/${item.id}`;
       const key = trialCount === 1 ? baseKey : `${baseKey} [trial ${trial}/${trialCount}]`;
       const startedAt = Date.now();
-      let codexHome;
+      let codexHomes;
       progress.phase(key, "case", "start");
       try {
         if (agent === "codex" && !commandOverride) {
-          codexHome = createTemporaryCodexHome();
+          codexHomes = createTrialCodexHomes(compareBaseline);
         }
         const result = await runCase(data, item, {
-          codexHome,
+          codexHomes,
           trial,
           onPhase: (phase, status, details) => progress.phase(key, phase, status, details)
         });
@@ -1779,7 +1851,7 @@ async function main() {
         progress.complete(key, result, Date.now() - startedAt);
         return result;
       } finally {
-        cleanupTemporaryCodexHome(codexHome);
+        cleanupTrialCodexHomes(codexHomes);
       }
     });
   } finally {
@@ -1847,12 +1919,14 @@ module.exports = {
   cleanupActiveTemporaryResources,
   cleanupJudgeWorkspace,
   cleanupTemporaryCodexHome,
+  cleanupTrialCodexHomes,
   collectArtifacts,
   configureLimits,
   createCaseWorkspace,
   createProgressReporter,
   createJudgeWorkspace,
   createTemporaryCodexHome,
+  createTrialCodexHomes,
   evidenceAppearsInOutput,
   evidenceList,
   expectationsFor,
@@ -1860,6 +1934,7 @@ module.exports = {
   formatProgressLine,
   installSignalCleanup,
   mapWithConcurrency,
+  materializeFixtures,
   measurementsFor,
   median,
   normalizeCommandResult,

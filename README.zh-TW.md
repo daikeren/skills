@@ -135,7 +135,7 @@ npm run eval:live
 
 ```bash
 LIVE_EVAL_AGENT=codex \
-LIVE_EVAL_CASES=understand-change/small-change-uses-chat,route-work/direct-low-risk-path \
+LIVE_EVAL_CASES=understand-change/small-change-uses-chat,route-work/ambiguous-routing \
 LIVE_EVAL_COMPARE_BASELINE=1 \
 npm run eval:live
 ```
@@ -165,7 +165,7 @@ Contract checks 仍是 correctness gate，用來確認 skill 是否符合原本�
 
 Codex runner 會透過 JSONL telemetry 計算已完成的 command、file-change、MCP 與 web-search actions。Contract judge 也會收到 bounded、redacted execution trace，讓 process expectations 能依觀察到的 actions 判斷，而不是只看 final answer 的敘述。Command output、raw command arguments、MCP arguments 與 web-search queries 都會省略。Commands 只會保留 allowlisted structural summary，包括已知 tool 與 `npm run validate`、`git status` 這類安全 action；未知 command 只會記為 `other`。Sanitized trace 會保留在 candidate result 中，方便稽核。若 harness 沒有提供可靠的 structured telemetry，則記錄 unavailable evidence，不自行推測。單次 elapsed-time sample 只能作為方向性證據，不能當作 benchmark。
 
-Live runner 會平行執行 case trials，但維持同一 trial 內各 phase 的必要順序。它會把 case、trial、phase 的開始與完成、elapsed time、aggregate progress 寫到 stderr，並把同一份帶 timestamp 的 stream 持久化到已忽略的 `evals/results/live-progress.log`，不會回顯 prompts 或 fixture contents。Candidate 與 baseline 都各自使用 disposable、內容一致的 task workspace，並移除 skill runtime surfaces、eval definitions、results 與其他 cases 的 fixtures；selected skill bundle 與本 case fixture 只會透過 candidate prompt 提供。Codex case 也各自使用只包含 authentication file 的 private temporary home，judges 則在獨立的空白 temporary directories 執行。Runner 會拒絕不安全的 fixture paths 與 symbolic links，對每個 command 套用 timeout，並清理 process group。正常結束、`SIGHUP`、`SIGINT` 或 `SIGTERM` 時，會清除 active process trees、temporary workspaces 與 credential copies。Hard kill 或 host failure 仍可能留下 temporary credential residue，必須手動清除。Runner 會把依序排列的 trial results、aggregates、concurrency、repeats 與總 duration 寫入 source checkout 的 `evals/results/live-latest.json`。不要把它放進快速 CI gate，因為它依賴本地 agent installation、credentials、model availability 與費用。
+Live runner 會平行執行 case trials，並在 repeated trials 之間平衡 candidate/baseline 的生成順序，同時維持同一 trial 內必要的 dependency order。它會把 case、trial、phase 的開始與完成、elapsed time、aggregate progress 寫到 stderr，並把同一份帶 timestamp 的 stream 持久化到已忽略的 `evals/results/live-progress.log`，不會回顯 prompts 或 fixture contents。Candidate 與 baseline 都各自使用 disposable、內容一致的 task workspace，並移除 skill runtime surfaces、eval definitions、results 與其他 cases 的 fixtures。Selected case fixtures 會同時透過 prompt 提供給兩邊，並在需要執行時寫入相同的 workspace path；只有 candidate 會收到 selected skill bundle。每個 Codex arm 與 judge 都使用彼此獨立、只包含 authentication file 的 private temporary home，judges 也會在獨立的空白 temporary directories 執行。Runner 會拒絕不安全的 fixture paths 與 symbolic links，對每個 command 套用 timeout，並清理 process group。正常結束、`SIGHUP`、`SIGINT` 或 `SIGTERM` 時，會清除 active process trees、temporary workspaces 與 credential copies。Hard kill 或 host failure 仍可能留下 temporary credential residue，必須手動清除。Runner 會把依序排列的 trial results、aggregates、concurrency、repeats 與總 duration 寫入 source checkout 的 `evals/results/live-latest.json`。不要把它放進快速 CI gate，因為它依賴本地 agent installation、credentials、model availability 與費用。
 
 ## 日常 Workflow
 

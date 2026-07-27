@@ -1,6 +1,6 @@
 {
   "skill": "review-code",
-  "version": 7,
+  "version": 8,
   "purpose": "Check that review tasks produce findings-first code review instead of style commentary or summaries first.",
   "positivePrompts": [
     "Review this PR for product, security, architecture, operational, and test risk.",
@@ -122,8 +122,8 @@
       "allowsNotApplicable": true
     },
     {
-      "text": "The review considers product, security/privacy, architecture, operations, and tests when relevant.",
-      "allowsNotApplicable": true
+      "text": "The findings and verdict reflect the relevant product, security/privacy, architecture, operations, and test lenses without narrating lenses that do not affect the target.",
+      "allowsNotApplicable": false
     }
   ]
 }

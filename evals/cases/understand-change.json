@@ -1,6 +1,6 @@
 {
   "skill": "understand-change",
-  "version": 3,
+  "version": 4,
   "purpose": "Check that code-change explanations build a usable mental model with the lightest effective medium while preserving strong artifact safety when HTML is justified.",
   "positivePrompts": [
     "Teach me this pull request so I can safely modify the same flow next week.",
@@ -69,6 +69,7 @@
         "Chooses and, when non-obvious, briefly justifies a medium based on the learner goal and cross-layer complexity.",
         "Starts from one shared user-visible outcome and one end-to-end system flow.",
         "Groups the walkthrough by concept and contract boundary instead of mechanically separating backend and frontend files.",
+        "Uses only one non-duplicative secondary representation after the end-to-end trace instead of repeating the same contracts as a map, checkpoints, and another layer-by-layer walkthrough.",
         "Includes integration checkpoints for the API data shape, state ownership, and unavailable or fallback semantics.",
         "Uses precise post-change path and line-range references without inventing immutable links that the fixture cannot support.",
         "Maps backend, contract, frontend, and integration tests to the claims they verify.",
@@ -92,6 +93,9 @@
       "text": "When an understanding gate is used, readiness is not claimed before learner answers are evaluated.",
       "allowsNotApplicable": true
     },
-    "No persistent repository artifact is created without explicit authorization."
+    {
+      "text": "When the skill creates a persistent repository or documentation artifact, the user explicitly authorized it.",
+      "allowsNotApplicable": true
+    }
   ]
 }

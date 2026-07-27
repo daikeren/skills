@@ -1,6 +1,6 @@
 {
   "skill": "implement-change",
-  "version": 3,
+  "version": 4,
   "purpose": "Check that implementation tasks detect local tooling, keep changes small, and handle mixed scope using semantic evidence.",
   "positivePrompts": [
     "Implement this feature carefully and verify the smallest meaningful surface.",
@@ -92,10 +92,14 @@
         "backend-verification-contract.md"
       ],
       "checks": [
-        "States the idempotency invariant and the observable result that would falsify it before building the probe.",
+        "States the idempotency invariant and the observable result used to falsify it when designing the probe.",
         "Keeps the backend production patch small while using an isolated replay, timeout, or concurrency probe to amplify evidence.",
+        "Implements the stable idempotency key and exact decimal rounding required by the supplied backend contract without treating either requirement as unrelated scope.",
         "Compares the consequential result with an independent invariant, known-good result, or separately derived oracle instead of trusting generated implementation and verification to confirm each other.",
-        "Records concrete probe output and still preserves required human review, release gates, and durable regression coverage.",
+        {
+          "text": "When human review, release gates, or durable regression coverage are required and available in the repository snapshot, preserves them instead of presenting the disposable probe as a replacement.",
+          "allowsNotApplicable": true
+        },
         "Discards or quarantines the probe by default and promotes it only when ongoing value, reviewability, and maintenance cost justify retention."
       ]
     }
@@ -104,9 +108,15 @@
     "Verification command is chosen from repo evidence.",
     "Ambiguous future goals do not expand the current slice beyond the requested behavior and established repository patterns.",
     "Consequential internal control flow, ownership, and key contracts are settled before editing, while routine changes reuse established patterns without program-design ceremony.",
-    "Stateful changes use an explicit checkpoint rather than accumulating local boolean or fallback patches.",
+    {
+      "text": "When correctness depends on several state axes, identity paths, event ordering, or consequential fallbacks, the change uses an explicit stateful checkpoint rather than accumulating local patches.",
+      "allowsNotApplicable": true
+    },
     "Poorly observable material claims can use disposable evidence-amplification probes across frontend, backend, data, integration, or operational paths.",
-    "Broad or mixed diffs use keep, split, or justify dispositions grounded in semantic evidence.",
+    {
+      "text": "When the retained diff is broad or mixed, it uses keep, split, or justify dispositions grounded in semantic evidence.",
+      "allowsNotApplicable": true
+    },
     "Final response names changed files, verification, and residual risk."
   ]
 }

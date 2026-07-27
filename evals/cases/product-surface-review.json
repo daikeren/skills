@@ -1,6 +1,6 @@
 {
   "skill": "product-surface-review",
-  "version": 5,
+  "version": 6,
   "purpose": "Check that product reviews focus on workflow, clarity, states, accessibility, and trust.",
   "positivePrompts": [
     "Before release, walk through what a new admin sees when billing settings are empty, loading, or fail.",
@@ -20,6 +20,7 @@
       ],
       "checks": [
         "Demonstrates consideration of the entry point, happy path, edge states, errors, permissions, and recovery while reporting only decision-relevant gaps.",
+        "For the supplied billing mutations, covers role visibility, duplicate submission or replay, authoritative confirmation, ambiguous outcomes, and recovery when they affect release confidence.",
         "Separates user-impact findings from taste.",
         "Calls out trust and support burden when they are material to the supplied surface.",
         "Does not present unspecified implementation details as confirmed defects; separates evidence-backed findings from assumptions, open questions, and missing validation."

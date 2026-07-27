@@ -1,6 +1,6 @@
 {
   "skill": "setup-repo-context",
-  "version": 2,
+  "version": 3,
   "purpose": "Check that repo context setup records local conventions from evidence without imposing tool-specific defaults.",
   "positivePrompts": [
     "Set up repo context so future agents know where specs, tickets, verification, and lessons live.",
@@ -31,16 +31,24 @@
       "checks": [
         "Uses read mode and returns a context snapshot.",
         "Does not create or update a context file.",
-        "Treats an existing context location as target evidence, not write authorization."
+        "Treats an existing context location as target evidence, not write authorization.",
+        "Uses direct source paths or line references for the requested spec, verification, and lesson conventions when the snapshot supports them.",
+        "Does not expand the narrow lookup into unrelated context categories or generic handoff guidance."
       ]
     }
   ],
   "traceExpectations": [
     "Existing repo context and instructions are preferred over new structure.",
-    "Stale entries are updated only in authorized write mode and when current evidence contradicts them.",
-    "Writes require an explicit user request or a repo instruction that explicitly requires maintenance.",
     {
-      "text": "If no write target is clear, the output gives a context snapshot and candidate locations.",
+      "text": "When stale entries are updated, the task is in authorized write mode and current evidence contradicts them.",
+      "allowsNotApplicable": true
+    },
+    {
+      "text": "When the skill writes context, an explicit user request or a repo instruction that explicitly requires maintenance authorizes the write.",
+      "allowsNotApplicable": true
+    },
+    {
+      "text": "When an authorized write request has no clear target, the output gives a context snapshot and candidate locations.",
       "allowsNotApplicable": true
     }
   ]

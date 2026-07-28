@@ -1,6 +1,6 @@
 {
   "skill": "to-spec",
-  "version": 1,
+  "version": 2,
   "purpose": "Check that plans become lightweight implementation specs without PRD bloat.",
   "positivePrompts": [
     "The team chose option B; write the implementation spec with goals, non-goals, UX/API contracts, rollout, and validation.",
@@ -31,6 +31,7 @@
         "Pressure-tests fuzzy terms, edge cases, contradictions, and assumptions before freezing the spec.",
         "Uses existing repo vocabulary or ADRs when local context provides them.",
         "Names the highest useful testing seams for external behavior.",
+        "Marks consequential technical choices as accepted or proposed and provides a concise decision handoff for downstream tickets.",
         "Includes only decision-rich prototype output, not throw-away demo code.",
         "Avoids brittle file-by-file planning."
       ]
@@ -42,6 +43,7 @@
     "Pressure-testing stays bounded to scope-changing questions or assumptions.",
     "Repo/context reading precedes spec decisions when local code matters.",
     "Validation names behavior seams rather than implementation details.",
+    "Accepted, proposed, and open decisions remain distinguishable when the spec is transformed into downstream tickets.",
     "Open questions stay within the chosen direction and bounded scope."
   ]
 }

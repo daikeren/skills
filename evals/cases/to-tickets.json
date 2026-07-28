@@ -1,9 +1,10 @@
 {
   "skill": "to-tickets",
-  "version": 3,
+  "version": 4,
   "purpose": "Check that specs become independently mergeable and releasable tickets.",
   "positivePrompts": [
     "Break this spec into releasable tickets.",
+    "Create or update an issue-tracker item from this implementation plan.",
     "Create to-tickets slices with blockers, rollout, flags, and cleanup follow-ups.",
     "Plan a complex orchestration change by settling the program shape and then slicing it into tracer-bullet tickets."
   ],
@@ -49,12 +50,27 @@
         "Treats the explicit existing pattern as sufficient and skips the program-shape checkpoint.",
         "Still gives the ticket acceptance criteria and focused verification appropriate to documentation copy."
       ]
+    },
+    {
+      "id": "issue-keeps-outcome-not-implementation",
+      "prompt": "Rewrite these implementation planning notes as the issue description only. The authoritative spec is docs/response-provenance.md. Its accepted decisions are response-level rather than history-level provenance, and fail-closed exclusion when provenance cannot be verified. Goal: downstream analysis must trust which published agent version and verified request source produced each completed assistant response. Required behavior: old responses keep their original version after a new publish; a paused response resumes with its initiating version and source; unverifiable, incomplete, or internal-console responses are excluded. The draft plan merely proposes Conversation.meta.response_provenance with schema_version, agent_history_id, response_source enums, status, and completed_at; an atomic transaction; a canonical source resolver module; a projection repair job; an index; and named mismatch metrics. Keep the issue focused on purpose and outcomes without losing accepted decisions from the spec.",
+      "expectedSkill": "to-tickets",
+      "checks": [
+        "Frames the issue around why trustworthy response provenance matters and the observable behavior that must hold.",
+        "Preserves the version-continuity, trusted-source, completed-response, and fail-closed exclusion outcomes without prescribing how they are implemented.",
+        "References the authoritative spec and carries its accepted response-level and fail-closed decisions as concise constraints that implementation must not reopen.",
+        "Includes bounded scope or non-goals and acceptance signals that can be verified from behavior.",
+        "Omits the proposed persistence location, exact internal fields and enums, transaction, resolver placement, repair job, index, and named metric implementation from the issue description.",
+        "Does not discard real trust-boundary or release constraints merely to make the issue shorter."
+      ]
     }
   ],
   "traceExpectations": [
     "Program shape is resolved only when consequential internal decisions remain open, and established local patterns can satisfy the checkpoint.",
     "Tickets are tracer-bullet vertical slices through relevant layers.",
     "Tickets are independently reviewable and mergeable where possible.",
+    "Issue descriptions preserve outcome contracts and trace accepted decisions to an authoritative spec or ADR while keeping rationale and internal mechanics out of the issue body.",
+    "When no durable source exists, tickets carry concise accepted constraints instead of depending on hidden conversation context.",
     "Frontier means tickets whose blockers are clear.",
     "Granularity review asks whether tickets are too coarse, too fine, or wrongly blocked.",
     "Cleanup follows compatibility and rollout."

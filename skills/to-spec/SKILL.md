@@ -19,9 +19,10 @@ description: Converts an already chosen direction, settled conversation, prototy
 10. Write the spec around externally visible behavior and system contracts, not a file-by-file plan.
 11. Include product, architecture, security/privacy, operational, cost, and rollout considerations only where they affect the implementation.
 12. Keep the spec lightweight enough that an agent can execute it in small slices.
-13. For cross-session handoff, prefer the repo's existing spec convention. If none exists, propose a path and minimal frontmatter instead of forcing file creation.
-14. If a domain term or decision crystallizes, include it in the spec and suggest optional glossary or ADR capture only when the decision is hard to reverse, surprising without context, and the result of a real tradeoff.
-15. If a prototype produced useful decision artifacts, include only the decision-rich snippet or learned constraint, not throw-away demo code.
+13. Mark decisions as accepted, proposed, or open before handoff. Do not paste a full implementation spec into an issue tracker. When the requested destination is an issue or ticket, use `to-tickets` to transform the spec into an outcome contract that references the authoritative spec when it has a durable location and carries concise accepted constraints an implementer must not reopen. If the spec is not durably addressable, include that compact decision handoff in the ticket rather than depending on hidden conversation context; keep rationale and internal mechanics out of the issue body.
+14. For cross-session handoff, prefer the repo's existing spec convention. If none exists, propose a path and minimal frontmatter instead of forcing file creation.
+15. If a domain term or decision crystallizes, include it in the spec and suggest optional glossary or ADR capture only when the decision is hard to reverse, surprising without context, and the result of a real tradeoff.
+16. If a prototype produced useful decision artifacts, include only the decision-rich snippet or learned constraint, not throw-away demo code.
 
 ## Output
 
@@ -34,10 +35,11 @@ Use this structure:
 - Constraints: compatibility, policy, data, timing, budget, and team constraints.
 - Pressure test: fuzzy terms, edge cases, code/story contradictions, and assumptions that could change scope or risk.
 - UX/API contract: user flow, states, permissions, inputs, outputs, errors, and data contract.
-- Technical approach: key design decisions, domain terms, ADRs, and integration points.
+- Technical approach: key design decisions and whether each is accepted or proposed, domain terms, ADRs, and integration points.
 - Rollout and operations: flags, migration, monitoring, support, cost, and rollback.
 - Validation: highest useful testing seams, similar prior tests, manual checks, metrics, and evidence needed before release.
 - Open questions: implementation or design unknowns that do not reopen the chosen direction or bounded scope; direction-changing questions return the work to the readiness gate.
+- Decision handoff: concise accepted constraints downstream tickets must preserve, plus the durable spec or ADR reference when one exists.
 - Handoff artifact: existing repo location, or proposed path and frontmatter when a durable spec should cross sessions.
 
 Avoid stale implementation detail. Mention files only when they are stable interfaces or required context.

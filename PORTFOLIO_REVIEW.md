@@ -84,15 +84,18 @@ Every value hypothesis must be tested on six separate dimensions:
 | Burden | What extra context, output, tools, time, user interaction, and review effort did it require? | Per-arm measurements and human-review burden |
 | Robustness | Does the result hold across repeats and relevant task variants? | Counterbalanced repeated trials, disagreement and failure retention |
 
-The primary arm is the full current skill versus a frozen instruction. Only the
-goal, inputs, context, constraints, approval boundary, evidence requirements,
-success criteria, and output need supplied by the fixture, user, or repository
-are held constant. A decision or requirement introduced by the skill is treatment
-and must not leak into the terse arm. The table below names that treatment for
-every skill. A no-instruction arm answers a different causal question and cannot
-replace it.
+The primary comparison is the full current skill versus a frozen same-goal terse
+instruction. The goal, inputs, context, constraints, approval boundary, evidence
+requirements, success criteria, and output need supplied by the fixture, user,
+or repository are held constant. A decision or requirement is treatment only
+when per-case provenance shows that the skill introduced it; fixture-, user-,
+and repository-supplied requirements remain in both arms. The table below is a
+candidate inventory for that provenance audit, not evidence that these decisions
+are exclusive to the skill arm. U4 is the gate before issue #4 freezes either
+arm. A no-instruction arm answers a different causal question and cannot replace
+the terse baseline.
 
-| Skill | Decisions present only in the skill arm |
+| Skill | Candidate skill-specific decisions to provenance-audit |
 | --- | --- |
 | `architecture-review` | Current-state map before target design; defect versus improvement; reversible migration gates |
 | `compound-learning` | Capture authority; validation threshold; store selection and privacy boundary |
@@ -162,14 +165,19 @@ Skill and dataset links are pinned to the reviewed commit. `E` means
 | Repository and human context | `setup-repo-context`; `compound-learning`; `understand-change` | Context records conventions; learning records validated reusable lessons; understanding teaches a concrete change | All externalize context, but their oracles differ: factual snapshot, future reuse, and learner transfer. Shared output mechanics are not enough to justify a merge |
 | Cross-cutting implementation/review judgment | `implement-change`; `review-code`; specialist reviews | Implementation changes retained code; all reviews stay report-only | Stateful, risk, and evidence checkpoints overlap intentionally; evaluation must show whether duplication prevents errors or merely repeats base-agent policy |
 
-Every material overlap is evaluated with three predeclared fixture classes.
-Routing is scored only on exclusive cases; task outcome is compared only on the
-dual-eligible intersection. Multiple routes are not an error when the acceptable
-set below permits composition.
+The material pairwise boundaries named below each have three predeclared fixture
+classes for issue #4 to instantiate. Routing is scored only on exclusive cases;
+task outcome is compared only on the dual-eligible intersection. Multiple routes
+are not an error when the acceptable set below permits composition. The
+surface-level map is not evidence that an unlisted pair is covered: any additional
+material pair found during case design must receive the same three-class mapping
+or be recorded as an unresolved boundary.
 
 | Surface | A-exclusive fixtures | B-exclusive fixtures | Dual-eligible intersection and acceptable routes |
 | --- | --- | --- | --- |
 | Full versus specialist review | Full concrete diffs with material findings across two or more lenses: `review-code` | Design-only, product-only, or trust-boundary-only questions: the matching specialist | Concrete diff dominated by one specialist lens: either `review-code`, the specialist, or their composition; compare lens ablation on outcome, false positives, and burden |
+| Product versus security review | User-journey, state, informed-intent, or recovery question without a material trust-boundary decision: `product-surface-review` | Authorization, privacy, secrets, abuse, or backend-enforcement question without a material user-workflow decision: `security-privacy-review` | Billing, admin, destructive, or sensitive-data workflow where both user comprehension and backend enforcement matter: either specialist or their composition; compare missed product states, reachable security findings, false positives, and burden |
+| Architecture versus security review | Service boundary, data flow, reliability, operations, or migration question without a material threat-boundary decision: `architecture-review` | Threat, authorization, privacy, secret, abuse, or minimization question inside an otherwise settled architecture: `security-privacy-review` | Architecture change that also moves a trust or sensitive-data boundary: either specialist or their composition; score architecture viability and security risk reduction separately |
 | Scope versus research | Unstable frame without a bounded evidence question: `scope-work` | Framed decision with a current-fact gap: `research-brief` | Unstable frame whose path depends on one current fact: `scope-work` then `research-brief`, or an equivalent adaptive composition |
 | Scope versus options | Unstable frame: `scope-work` | Framed and sufficiently evidenced choice: `strategy-to-options` | Partially framed decision with remaining decision-changing constraints: scope then options, or an adaptive composition; score readiness and option validity |
 | Research versus options | Current-fact conclusion is the requested outcome: `research-brief` | Evidence is already sufficient and a choice is requested: `strategy-to-options` | Choice requires one bounded current-fact update: research then options; both steps or an equivalent composition are acceptable |
@@ -179,14 +187,13 @@ set below permits composition.
 | Routing versus execution | Ambiguous capability path: `route-work` | Already-bounded work: direct execution skill | Genuine multiple-capability case: router plus accepted downstream path or a direct accepted composition |
 | Production versus disposable proof | Retained production outcome: `implement-change` | Disposable learning outcome: `prototype` | Retained change needing a subordinate probe: `implement-change` with embedded prototype step or explicit composition |
 | Spec versus tickets | Reusable external behavior contract: `to-spec` | Adequate existing spec needing delivery slices: `to-tickets` | Chosen direction needing both artifacts: separate sequence or merged projection; compare fidelity, dependency safety, and burden |
-| Repository, lesson, and learner context | Repository conventions: `setup-repo-context`; validated reusable lesson: `compound-learning` | Concrete-change teaching: `understand-change` | Change reveals a reusable convention or lesson: any necessary ordered composition; each artifact keeps its own factual/reuse/transfer oracle |
+| Repository context versus reusable lesson | Current repository conventions, commands, or explicit/inferred/unknown facts that must be established before work: `setup-repo-context` | A validated lesson from completed work that should improve a later task: `compound-learning` | Completed work validates a reusable repository convention not yet recorded: either ordered composition is acceptable; keep factual snapshot and future-reuse oracles separate |
+| Repository/lesson context versus learner transfer | Repository conventions or a reusable lesson are the retained outcome: `setup-repo-context` or `compound-learning` | Teaching one concrete change for later explanation or modification: `understand-change` | A concrete change both teaches a reader and yields reusable context: any necessary ordered composition; keep factual, reuse, and learner-transfer oracles separate |
 | Implementation versus review | Requested retained change: `implement-change` | Report-only release or specialist decision: the matching review skill | Change followed by independent review: ordered composition; never score the report-only arm as failing because it did not edit |
 
-For product/security intersections such as billing, admin, and destructive
-workflows, both specialist routes and their composition are acceptable on
-intersection fixtures. For architecture/security intersections, both routes and
-composition are likewise acceptable when system-boundary and threat-boundary
-judgment are independently material.
+The two specialist intersection rows intentionally allow either specialist or
+composition; issue #4 must compare their separate outcome dimensions rather than
+treating route agreement as proof of value.
 
 ## Skill Value Contracts
 
@@ -688,9 +695,9 @@ judgment are independently material.
 
 | ID | Material unknown | Why it can change issue #4 | Smallest resolving validation |
 | --- | --- | --- | --- |
-| U1 | Exact model, reasoning mode/effort, harness revision, skill/prompt/fixture hashes, and workspace identity are absent from ignored local historical results | Without attribution, those observations cannot be assigned to current skills or GPT-5.6 | Preserve these identities in one immutable dry-run manifest before designing behavioral cases |
+| U1 | Exact model, reasoning mode/effort, harness revision, and workspace identity are absent from ignored local historical results and cannot be reconstructed without preserved source artifacts | Without attribution, those observations cannot be assigned to current skills or GPT-5.6 | Audit once for preserved source artifacts; if absent, mark the historical runs permanently inadmissible. Validate future capture with one immutable dry-run manifest, then require a fresh versioned run after issue #2's artifact contract is available and as part of issue #4 |
 | U2 | Historical result files are ignored local artifacts, not durable review evidence | Results cannot be independently reviewed from a clone and may be lost | Complete issue #2's versioned redacted artifact layout before admitting any historical or future live result as disposition evidence |
-| U3 | The current revision identity may differ from any ignored historical run's skill, case, and fixture inputs | A result may test obsolete behavior or omit the current contract | Freeze the current repository revision and map every benchmark case to exact skill/case/fixture hashes |
+| U3 | Exact skill, prompt, case, and fixture revisions are absent from ignored local historical runs and cannot be mapped to the current revision without preserved hashes or source artifacts | A result may test obsolete behavior or omit the current contract | Audit once for exact preserved inputs or hashes; if absent, mark the historical runs permanently inadmissible. Freeze current hashes for issue #4 and generate a fresh versioned run under issue #2's artifact contract |
 | U4 | Existing comparisons use an explicit no-skill prompt, and current fixtures do not label which requirements originate with the user/repository versus the skill | They do not isolate marginal value and could leak treatment decisions into the terse arm | For each selected issue #4 case, record requirement provenance and add a terse baseline that preserves only fixture-, user-, and repository-supplied requirements |
 | U5 | Current cases are predominantly contract-derived and lack representative provenance and independent outcome oracles | A skill can pass by imitating its own format while adding no engineering value | For each skill, retain contract cases separately and add at least one pinned representative positive-use and one bypass/boundary case with an independent oracle |
 | U6 | Real routing accuracy is unknown; current lexical routing is explicitly non-blocking and not the agent's real selector | Misrouting can erase forced-use value or impose ceremony on routine tasks | Run a selection-only suite across obvious-use, clear-bypass, sibling-boundary, ambiguous, and out-of-portfolio tasks |

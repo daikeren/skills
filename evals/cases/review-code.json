@@ -1,6 +1,6 @@
 {
   "skill": "review-code",
-  "version": 8,
+  "version": 10,
   "purpose": "Check that review tasks produce findings-first code review instead of style commentary or summaries first.",
   "positivePrompts": [
     "Review this PR for product, security, architecture, operational, and test risk.",
@@ -21,7 +21,7 @@
         "sample-diff.md"
       ],
       "checks": [
-        "Launches or simulates isolated review lenses before aggregating findings.",
+        "Integrates supported permission and verification risks into one findings-first verdict without duplicated or ceremonial findings.",
         "Reads backend permission checks, not only frontend visibility.",
         "Reports the backend authorization regression in sample-diff.md before summaries, rather than focusing only on route naming.",
         "Explains user or data impact and gives a concrete fix direction.",
@@ -99,11 +99,50 @@
         "Groups the issues under missing canonical episode identity instead of treating every branch as an unrelated edge case.",
         "Requests timeline, prior-episode, mixed-metadata-path, and fallback regression coverage while keeping findings scoped to the patch."
       ]
+    },
+    {
+      "id": "deployment-policy-bypass",
+      "prompt": "Review the model-deployment scheduling change in the bounded workspace for release safety. Return a findings-first verdict with concrete evidence and bounded verification gaps.",
+      "expectedSkill": "review-code",
+      "fixturePresentation": "workspace",
+      "fixtures": [
+        "deployment-v1/contract.md",
+        "deployment-v1/services.py",
+        "deployment-v1/api.py",
+        "deployment-v1/handler-a.py",
+        "deployment-v1/test_deployment.py"
+      ],
+      "checks": [
+        "Reports that the handler uses the unchecked launch operation and can queue request-controlled artifact, runtime, and network settings without the accepted release policy.",
+        "Connects the finding to the documented launch_unchecked semantics and request-controlled deployment specification rather than inferring a missing mechanism.",
+        "Recognizes that the ordinary launch operation owns tenant, artifact-signature, runtime, network, and release-policy validation under the supplied control-plane contract.",
+        "Keeps missing integration tests separate from the current policy-bypass defect."
+      ]
+    },
+    {
+      "id": "deployment-policy-bound",
+      "prompt": "Review the model-deployment scheduling change in the bounded workspace for release safety. Return a findings-first verdict with concrete evidence and bounded verification gaps.",
+      "expectedSkill": "review-code",
+      "fixturePresentation": "workspace",
+      "fixtures": [
+        "deployment-v1/contract.md",
+        "deployment-v1/services.py",
+        "deployment-v1/api.py",
+        "deployment-v1/handler-b.py",
+        "deployment-v1/test_deployment.py"
+      ],
+      "checks": [
+        "Says clearly that no current implementation defect or material release risk is supported by the supplied patch; a concise non-blocking missing-validation gap is allowed.",
+        "Recognizes that deployment.launch validates the requested specification against the immutable accepted release before durable queuing.",
+        "Does not demand duplicated tenant, signature, artifact, runtime, or network-policy checks in application code when the authoritative control-plane boundary supplies them.",
+        "Does not invent duplicate deployment jobs contradicted by request-scoped idempotency and serialized queue admission.",
+        "Keeps residual verification gaps separate from current defects and scoped to the supplied contract."
+      ]
     }
   ],
   "traceExpectations": [
     "An optional release verdict and concise rationale may precede findings; any change summary follows the findings.",
-    "Each finding has severity, confidence, likelihood, disposition, impact, and location when available.",
+    "Each finding has severity, disposition, impact, evidence, and location when available; confidence and likelihood are explicit only when they affect the verdict.",
     "The release verdict says Block, Approve with follow-ups, or Approve, and explicitly says when there are no blocking findings.",
     {
       "text": "When catastrophic, irreversible, cross-tenant, permission, privacy, data-loss, or financial risk is supported by concrete evidence, low likelihood does not make it non-blocking.",
@@ -114,7 +153,7 @@
       "allowsNotApplicable": true
     },
     {
-      "text": "For a non-trivial review, the review uses parallel subagents when available or names an isolated-pass fallback.",
+      "text": "For a broad multi-surface review, independently supported material surfaces are integrated into one findings-first verdict without duplicated or ceremonial findings; unavailable process telemetry remains unknown.",
       "allowsNotApplicable": true
     },
     {

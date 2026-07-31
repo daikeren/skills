@@ -48,6 +48,26 @@ explicitNotApplicable.traceExpectations = [
 ];
 assert.deepEqual(validateEvalData(explicitNotApplicable), []);
 
+const bypassCase = clone(validCase());
+bypassCase.cases[0].applicability = "bypass";
+assert.deepEqual(validateEvalData(bypassCase), []);
+
+const invalidApplicability = clone(validCase());
+invalidApplicability.cases[0].applicability = "always-run";
+expectError(invalidApplicability, "applicability must be use, bypass, or avoid-extra-process");
+
+const workspaceFixtures = clone(validCase());
+workspaceFixtures.cases[0].fixturePresentation = "workspace";
+assert.deepEqual(validateEvalData(workspaceFixtures), []);
+
+const invalidFixturePresentation = clone(validCase());
+invalidFixturePresentation.cases[0].fixturePresentation = "hidden";
+expectError(invalidFixturePresentation, "fixturePresentation must be inline or workspace");
+
+const workspaceWithoutFixtures = clone(workspaceFixtures);
+delete workspaceWithoutFixtures.cases[0].fixtures;
+expectError(workspaceWithoutFixtures, "fixtures must be present when fixturePresentation is workspace");
+
 const invalidExpectationObject = clone(explicitNotApplicable);
 invalidExpectationObject.traceExpectations[0].allowsNotApplicable = "yes";
 expectError(invalidExpectationObject, "allowsNotApplicable must be a boolean");

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "review-code/deployment-policy-bound",
+  "independence": "The oracle applies the visible deployment-operation semantics to the bounded request flow before any candidate response; exact wording and review format are not scoring evidence.",
+  "invariant": "Service-triggered deployments are validated against an accepted release before durable queue admission.",
+  "expectedOutcome": "no-material-findings",
+  "leakageGuards": [
+    "the second neutral deployment handler is the clean control",
+    "the ordinary launch fully validates the requested deployment specification"
+  ],
+  "materialFindings": [],
+  "cleanControls": [
+    "Treat deployment.launch as the authoritative validation boundary supplied by the visible contract.",
+    "The request specification is explicitly valid input; do not invent missing application-side tenant, signature, artifact, runtime, or network checks.",
+    "A bounded missing integration test may be non-blocking; it is not a current implementation defect."
+  ]
+}

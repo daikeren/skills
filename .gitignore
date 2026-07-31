@@ -4,5 +4,5 @@ node_modules/
 coverage/
 dist/
 tmp/
-evals/results/*.json
+evals/results/**
 !evals/results/.gitkeep

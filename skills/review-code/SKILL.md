@@ -1,6 +1,6 @@
 ---
 name: review-code
-description: Performs findings-first review of code diffs, PRs, patches, or uncommitted changes, using parallel subagents when available to isolate spec fit, architecture, security/privacy, operations, and verification lenses before aggregation. Use when reviewing concrete code changes for user regressions, authorization or privacy issues, architecture debt, operational risk, migration safety, missing tests, or release-safe readiness. Prefer architecture-review, product-surface-review, or security-privacy-review when the user wants one deep single-lens review rather than a full diff review.
+description: Performs findings-first review of code diffs, PRs, patches, or uncommitted changes, calibrating the depth and independent review lenses to the target before aggregating release risk. Use when reviewing concrete code changes for user regressions, authorization or privacy issues, architecture debt, operational risk, migration safety, missing tests, or release-safe readiness. Prefer architecture-review, product-surface-review, or security-privacy-review when the user wants one deep single-lens review rather than a full diff review.
 ---
 
 # Review Code
@@ -11,30 +11,31 @@ description: Performs findings-first review of code diffs, PRs, patches, or unco
 2. Stay report-only. Inspect and report findings; do not edit code, tests, docs, designs, or configuration unless the user explicitly changes the task from review to fix.
 3. Read the stated intent before judging the change. Use intent supplied in the task or fixture before looking for issue or PR references, commit messages, branch names, nearby docs, `docs/`, `specs/`, or project planning files. If no spec exists, review without one and say so only when that absence changes confidence or scope.
 4. Find standards sources only to the depth needed to judge the target: repo instructions, contribution docs, coding standards, architecture docs, tests, CI, lint configs, generated-code conventions, and nearby code patterns. Repo standards override generic preferences; a bounded fixture need not trigger a standards search when its behavior and disposition are already self-contained.
-5. Inspect the surrounding code, tests, docs, permissions, data flow, and user-facing behavior needed to validate the change.
-6. For stateful or integration-heavy changes, reconstruct the state model and event timeline before reviewing branches line by line. Identify state precedence, canonical identity or episode boundaries, async ownership, alternate matching paths, and fallback semantics.
-7. If a second confirmed finding shares the same state, identity, ordering, or fallback invariant, stop treating findings as isolated edge cases. Audit the complete target-scoped invariant surface and sibling paths, then report the shared root cause without expanding into unrelated refactoring.
-8. For non-trivial reviews, launch parallel subagents when the harness provides them. Keep prompts self-contained: include the review target, diff command or pasted patch, relevant commit list, spec or intent source, standards sources, lens-specific brief, and output budget. Do not pass your suspected findings unless asking a subagent to validate a specific concern.
-9. Use at least these independent lenses:
+5. Establish the authoritative contract before proposing findings. Separate product invariants, canonical fields, record-specific representations, and explicit runtime guarantees from assumptions. Treat supplied guarantees as settled unless the changed code contradicts them; do not require one record type to support identity paths that the contract assigns only to another. In a bounded snapshot, omitted mechanisms behind explicit external, caller-managed, or runtime guarantees remain unknown but constrained by those guarantees. Report a current defect when changed code directly contradicts a stated guarantee or, under documented operation semantics, creates a reachable path to a prohibited outcome. If the concern depends only on an omitted mechanism, record a material verification gap at most. Do not invent additional policy or lifecycle requirements that the authoritative contract does not establish. Do not infer a current defect solely because a field, argument, or implementation detail is absent when the authoritative contract assigns that behavior outside the bounded snapshot. When a visible operation's internal semantics are otherwise unspecified, interpret them consistently with explicit guarantees; only documented conflicting semantics or a reachable prohibited outcome establishes a contradiction.
+6. Inspect the surrounding code, tests, docs, permissions, data flow, and user-facing behavior needed to validate the change.
+7. For stateful or integration-heavy changes, reconstruct the state model and event timeline before reviewing branches line by line. Identify state precedence, canonical identity or episode boundaries, async ownership, applicable matching paths, and fallback semantics. Prefer the authoritative relation named by the contract; broaden into alternate paths only for records and states where the schema or runtime evidence makes them relevant.
+8. If a second confirmed finding shares the same state, identity, ordering, or fallback invariant, stop treating findings as isolated edge cases. Audit the complete target-scoped invariant surface and sibling paths, then report the shared root cause without expanding into unrelated refactoring.
+9. Start with one integrated pass over the target. Use parallel subagents only when the change has multiple independent risk surfaces, the consequence justifies the extra work, and isolated review could plausibly change the verdict. Keep prompts self-contained: include the review target, diff command or pasted patch, relevant commit list, spec or intent source, standards sources, lens-specific brief, and output budget. Do not pass your suspected findings unless asking a subagent to validate a specific concern.
+10. Activate only the relevant review lenses; the available set is:
    - Spec and product: missed requirements, scope creep, workflow regressions, edge states, trust, accessibility, and business impact.
    - Standards and architecture: documented standards, local idioms, boundaries, contracts, data flow, dependency weight, complexity, and maintainability.
    - Security and privacy: auth, permissions, sensitive data, logging, secrets, integrations, public APIs, billing/admin surfaces, and abuse cases.
    - Operations and verification: migrations, rollout, rollback, observability, queues, retries, external services, cost, tests, release gates, and monitoring.
    - State and temporal correctness, when relevant: lifecycle precedence, event ordering, stale ownership, canonical identity, previous episodes, alternate matching paths, partial data, and whether fallbacks fail safely.
    For agent discoverability, inspect only newly introduced or changed cross-file symbol names. Report names that are misleading, overly generic, or inconsistent with the repository's established term for the same concept when the ambiguity is concrete. Do not expand this check into file layout, types, comments, or untouched names, and do not request broad renames. Treat naming-only findings as non-blocking unless concrete correctness or compatibility impact supports a stronger disposition.
-10. If subagents are unavailable or the diff is tiny, run the relevant lenses as isolated local passes. Do not narrate lens coverage or fallback mechanics when they add no decision-relevant information to a narrow review.
-11. Before final aggregation, check relevant repo-local context or lessons if a lightweight store is evident, such as review notes, project memory, ADRs, or a public lessons log. Apply only lessons that match the current review target and are supported by repo evidence; do not block if no store exists.
-12. Aggregate the reports. Verify each candidate finding against the code or diff, deduplicate overlaps, drop speculative issues that lack impact, classify missing validation separately from current defects, and rerank blocking findings before non-blocking findings, then by severity. Unlike single-axis review, `review-code` should integrate the lenses into one findings-first risk order while preserving useful lens context.
-13. Avoid assuming a specific host, CI, framework, issue tracker, or deployment path. Infer tooling from repo evidence.
-14. Preserve user work. Do not suggest reverting unrelated changes unless the user explicitly asks.
-15. If no actionable findings exist, say so clearly and name any residual risk or test gap.
+11. If subagents are not justified or unavailable, keep the review integrated and make additional local passes only for unresolved material claims. Do not narrate lens coverage or fallback mechanics when they add no decision-relevant information.
+12. Before final aggregation, check relevant repo-local context or lessons if a lightweight store is evident, such as review notes, project memory, ADRs, or a public lessons log. Apply only lessons that match the current review target and are supported by repo evidence; do not block if no store exists.
+13. Aggregate the reports. Verify each candidate finding against the authoritative contract and changed code, deduplicate overlaps, drop issues contradicted by explicit guarantees or lacking reachable impact, classify missing validation separately from current defects, and rerank blocking findings before non-blocking findings, then by severity. Unlike single-axis review, `review-code` should integrate relevant lenses into one findings-first risk order without preserving unused lens ceremony.
+14. Avoid assuming a specific host, CI, framework, issue tracker, or deployment path. Infer tooling from repo evidence.
+15. Preserve user work. Do not suggest reverting unrelated changes unless the user explicitly asks.
+16. If no actionable findings exist, say so clearly and name only residual risk or test gaps not already settled by the supplied contract.
 
 ## Stateful Integration Lens
 
 Use this lens when a change combines lifecycle states, async work, retries or fallbacks, time ordering, or several ways to identify the same entity.
 
-1. Write the shortest event timeline that can explain the behavior, including creation, activation, persistence, retry, reply, timeout, and cleanup steps that matter. Test alternate orderings instead of trusting call-site order at a glance.
-2. Identify the canonical source of truth, identity, and episode boundary. If several fields or lookup paths represent the same entity, verify that per-path filtering or ranking cannot hide a globally newer or more authoritative candidate; combine candidates first when eligibility depends on that global ordering.
+1. Write the shortest event timeline that can explain the behavior, including creation, activation, persistence, retry, reply, timeout, and cleanup steps that matter. For every eligibility or ordering predicate, name the semantic event its boundary is meant to represent and verify that the code uses that event's authoritative timestamp and intended strictness; a nearby object's timestamp is not equivalent. Test alternate orderings instead of trusting call-site order at a glance.
+2. Identify the canonical source of truth, identity, and episode boundary from the authoritative contract. Map each alternate field or lookup path to the record type and lifecycle state where it is valid. If several applicable paths represent the same entity, verify that per-path filtering or ranking cannot hide a globally newer or more authoritative candidate; do not broaden the path set beyond the supplied schema.
 3. Distinguish loading, unavailable, error, empty, success, historical, and active states. Check precedence explicitly instead of inferring it from scattered booleans or nullable values.
 4. Challenge fallbacks with prior workspace, account, request, history, episode, and legacy-data scenarios. A broad fallback must not turn unknown state into a consequential success such as cleared, authorized, paid, published, or deleted.
 5. Inspect ownership across async boundaries: cancellation, request generation, idempotency, late responses, partial persistence, retries, and swallowed errors.
@@ -55,13 +56,13 @@ Use severity for impact if the issue occurs, independent of whether it blocks th
 - `[P2]` moderate bug, missing guardrail, important test gap, or maintainability issue with plausible near-term cost.
 - `[P3]` low-risk issue that still affects correctness, clarity, or future review.
 
-Use confidence labels:
+When evidence uncertainty changes a finding or verdict, use confidence labels:
 
 - High: directly observed in code, diff, design, or behavior with an unambiguous trace to impact.
 - Medium: supported by concrete evidence, but one assumption remains about runtime behavior, configuration, user path, or intended policy.
 - Low: plausible risk with incomplete evidence; keep the impact severity conditional and state the assumption or open question that needs validation.
 
-Use likelihood separately from confidence:
+When reachability or tail risk changes a finding or verdict, use likelihood separately from confidence:
 
 - High: common or broadly exposed path with few preconditions.
 - Medium: reachable path with meaningful preconditions.
@@ -75,11 +76,11 @@ Assign an explicit disposition to every finding:
 
 Do not infer disposition from severity or likelihood alone. A low-likelihood issue remains blocking when the consequence is catastrophic or difficult to contain or recover from, including authorization or privacy breaches, cross-tenant exposure, data loss, duplicate or incorrect financial effects, destructive migrations, or irreversible actions. A low-likelihood, limited, recoverable degraded-UX case is usually non-blocking or a follow-up. Missing validation blocks only when it is a required release gate or leaves a credible high-consequence risk unresolved.
 
-Each finding must communicate the impact, evidence confidence, occurrence likelihood, release disposition, evidence, and smallest credible fix direction when those dimensions affect judgment. Labels are a compact aid, not mandatory ceremony, but a finding used to decide release must still make confidence, likelihood, and disposition explicit and distinct; one inline sentence is enough for a bounded one-finding review. Use explicit severity and type (`current defect/regression`, `missing validation`, or `optional improvement`) when they prevent ambiguity, calibrate a disputed risk, or help aggregate multiple findings. Keep severity tied to conditional impact rather than evidence certainty. All blocking dispositions require concrete evidence of a reachable risk or a missing required high-risk release gate: cite a file:line or surface reference plus a short quote or paraphrase of the offending line, state, behavior, or validation gap when available. If reachability cannot be supported, keep the severity conditional, lower confidence, and move the item to assumptions or open questions rather than blocking. Recommend a follow-up ticket only when the work is independently actionable; state why it can wait and give a completion or verification signal. Do not turn low-confidence speculation into ticket backlog.
+Each finding must communicate impact, release disposition, evidence, and the smallest credible fix direction. State confidence or occurrence likelihood explicitly only when uncertainty, rarity, or tail risk changes the verdict; keep them distinct from impact severity and disposition when used. Use explicit type (`current defect/regression`, `missing validation`, or `optional improvement`) only when it prevents ambiguity or helps aggregate several findings. All blocking dispositions require concrete evidence of a reachable risk or a missing required high-risk release gate: cite a file:line or surface reference plus a short quote or paraphrase of the offending line, state, behavior, or validation gap when available. If reachability cannot be supported, move the item to assumptions or open questions rather than blocking. Recommend a follow-up ticket only when the work is independently actionable; state why it can wait and give a completion or verification signal. Do not turn low-confidence speculation into ticket backlog.
 
 Scale the presentation to the target. One clear finding may be one compact paragraph or bullet containing the required judgment; it does not need repeated headings, a lens-coverage summary, or generic validation suggestions that do not change the verdict. Spend detail on causal evidence, impact, and the fix rather than on review-process narration. Example finding:
 
-When the user asks only for the release disposition of one bounded finding, answer with the verdict and one compact evidence-impact-fix paragraph. Keep confidence, likelihood, and disposition distinct, but omit redundant headings, lens coverage, change summaries, and open-question sections unless one of them changes or qualifies the disposition.
+When the user asks only for the release disposition of one bounded finding, answer with the verdict and one compact evidence-impact-fix paragraph. When confidence or likelihood changes the judgment, keep it distinct from disposition; otherwise omit it along with redundant headings, lens coverage, change summaries, and open-question sections.
 
 ```text
 [P1][High confidence][Low likelihood][Blocking] api/routes.py:88 - Admin export
@@ -93,8 +94,8 @@ Then include:
 
 - Explicitly say `No blocking findings` when the verdict is not `Block`.
 - Open questions or assumptions that affect a finding or readiness.
-- For a non-trivial review, concise coverage: target reviewed, spec or intent source, standards sources, and subagents or local passes used. Omit this process summary for a narrow review when it adds no decision value.
-- Change summary, only after findings.
+- For a broad review, concise coverage only when it helps a reader understand material scope or an evidence gap. Omit process narration for a bounded review.
+- Change summary only when the user requested it or it materially helps explain the target; place it after findings.
 - Verification reviewed or missing when it affects confidence or release readiness.
 
 ## Subagent Briefs
@@ -118,5 +119,6 @@ Ask subagents for concise findings only. Budget each subagent to at most 5 findi
 - Security/privacy: auth, permissions, sensitive data, logging, integrations, and abuse cases.
 - Operations/cost: deploy, rollback, observability, retries, queues, external services, and spend.
 - Verification: table, transition, timeline, race, contract, and permission tests where relevant; manual checks, migration checks, release gates, and monitoring.
-- Release disposition: every finding distinguishes impact, evidence confidence, occurrence likelihood, and merge/release blocking status.
+- Omitted mechanisms: before finalizing, reconcile each finding based on an absent field, argument, or mechanism against explicit external, caller-managed, and runtime guarantees. If a guarantee resolves that concern, remove it as a defect and do not condition approval on re-proving the omitted implementation. Retain such a finding only when visible code or documented operation semantics show a bypass, conflicting data flow, or another concrete reachable violation.
+- Release disposition: every finding distinguishes impact from merge/release blocking status; state evidence confidence or occurrence likelihood when either changes the judgment.
 - Tail risk: low likelihood does not downgrade catastrophic, irreversible, cross-tenant, authorization, privacy, data-loss, or financial harm into a non-blocker.

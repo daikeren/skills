@@ -128,9 +128,23 @@ function validateEvalData(data) {
     } else if (isNonEmptyString(data.skill) && item.expectedSkill !== data.skill) {
       errors.push(`${prefix}.expectedSkill must match top-level skill`);
     }
+    if (
+      item.applicability !== undefined
+      && !["use", "bypass", "avoid-extra-process"].includes(item.applicability)
+    ) {
+      errors.push(`${prefix}.applicability must be use, bypass, or avoid-extra-process`);
+    }
+    if (
+      item.fixturePresentation !== undefined
+      && !["inline", "workspace"].includes(item.fixturePresentation)
+    ) {
+      errors.push(`${prefix}.fixturePresentation must be inline or workspace`);
+    }
     validateExpectationArray(errors, item.checks, `${prefix}.checks`, 2);
     if (item.fixtures !== undefined) {
       validateStringArray(errors, item.fixtures, `${prefix}.fixtures`, 1);
+    } else if (item.fixturePresentation === "workspace") {
+      errors.push(`${prefix}.fixtures must be present when fixturePresentation is workspace`);
     }
   });
 

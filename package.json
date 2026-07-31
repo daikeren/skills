@@ -19,11 +19,13 @@
     "software-delivery"
   ],
   "scripts": {
-    "validate": "node scripts/test-eval-schema.js && node scripts/test-eval-files.js && node scripts/test-live-eval-safety.js && node scripts/test-eval-entrypoints.js && node scripts/validate-skills.js && node scripts/validate-commands.js",
+    "validate": "node scripts/test-eval-schema.js && node scripts/test-eval-files.js && node scripts/test-eval-benchmark.js && node scripts/test-eval-workspace.js && node scripts/test-live-eval-safety.js && node scripts/test-eval-entrypoints.js && node scripts/validate-skills.js && node scripts/validate-commands.js",
     "sync-commands": "node scripts/sync-commands.js",
     "diagnose:routing": "node scripts/run-evals.js",
     "eval": "node scripts/run-evals.js",
     "eval:live": "node scripts/run-live-evals.js",
+    "eval:sample": "node scripts/generate-eval-sample.js",
+    "eval:verify-review": "node scripts/verify-independent-review.js",
     "extract:codex": "node scripts/extract-codex-workflows.js",
     "link": "node scripts/link-skills.js",
     "release:prepare": "node scripts/release.js"
@@ -36,7 +38,10 @@
     "commands/",
     "references/",
     "evals/cases/",
+    "evals/benchmark/",
     "evals/fixtures/",
+    "evals/oracles/",
+    "evals/README.md",
     "evals/results/.gitkeep",
     "scripts/",
     ".codex-plugin/",

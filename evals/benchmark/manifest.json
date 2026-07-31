@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "id": "engineering-judgment-skills-representative",
+  "version": "deployment-v1",
+  "status": "draft",
+  "scope": "Only the final deployment-policy pair is retained for bounded calibration; this draft does not support portfolio claims.",
+  "primaryBaseline": {
+    "kind": "same-goal-terse",
+    "id": "terse-v1"
+  },
+  "entries": [
+    {
+      "skill": "review-code",
+      "case": "deployment-policy-bypass",
+      "disposition": "adapt",
+      "role": "positive",
+      "readiness": "ready",
+      "rationale": "Final bounded positive calibration case: a neutral workspace review must discover the documented unchecked deployment operation.",
+      "source": {
+        "kind": "seeded-control",
+        "origin": "Repository-authored synthetic model-deployment scheduling patch",
+        "license": "MIT",
+        "baseRevision": "deployment-policy-seed-v1",
+        "contaminationRisk": "medium",
+        "intendedTaskDistribution": "Bounded release-safety reviews where request-controlled specifications rely on an authoritative control-plane validation boundary."
+      },
+      "oracle": "review-code/deployment-policy-bypass.json"
+    },
+    {
+      "skill": "review-code",
+      "case": "deployment-policy-bound",
+      "disposition": "keep",
+      "role": "negative",
+      "readiness": "ready",
+      "rationale": "Final matched clean control for the deployment calibration case.",
+      "source": {
+        "kind": "seeded-control",
+        "origin": "Repository-authored synthetic model-deployment scheduling patch",
+        "license": "MIT",
+        "baseRevision": "deployment-policy-seed-v1",
+        "contaminationRisk": "medium",
+        "intendedTaskDistribution": "Bounded release-safety reviews where request-controlled specifications rely on an authoritative control-plane validation boundary."
+      },
+      "oracle": "review-code/deployment-policy-bound.json"
+    }
+  ]
+}

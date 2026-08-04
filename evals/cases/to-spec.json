@@ -43,7 +43,6 @@
     "Pressure-testing stays bounded to scope-changing questions or assumptions.",
     "Repo/context reading precedes spec decisions when local code matters.",
     "Validation names behavior seams rather than implementation details.",
-    "Accepted, proposed, and open decisions remain distinguishable when the spec is transformed into downstream tickets.",
     "Open questions stay within the chosen direction and bounded scope."
   ]
 }

@@ -4,13 +4,14 @@
   "purpose": "Check that specs become independently mergeable and releasable tickets.",
   "positivePrompts": [
     "Break this spec into releasable tickets.",
-    "Create or update an issue-tracker item from this implementation plan.",
+    "Draft or revise an implementation issue description from this settled plan.",
     "Create to-tickets slices with blockers, rollout, flags, and cleanup follow-ups.",
     "Plan a complex orchestration change by settling the program shape and then slicing it into tracer-bullet tickets."
   ],
   "negativePrompts": [
     "Frame the ambiguous problem first.",
-    "Run a disposable prototype."
+    "Run a disposable prototype.",
+    "Move ENG-42 to In Progress, assign it to Sam, and add the backend label without changing its body."
   ],
   "cases": [
     {
@@ -63,14 +64,24 @@
         "Omits the proposed persistence location, exact internal fields and enums, transaction, resolver placement, repair job, index, and named metric implementation from the issue description.",
         "Does not discard real trust-boundary or release constraints merely to make the issue shorter."
       ]
+    },
+    {
+      "id": "issue-without-durable-source-keeps-decisions",
+      "prompt": "Draft only the implementation issue description from this settled conversation. There is no durable spec or ADR to link. Goal: workspace admins can export an audit archive without exposing it to other roles. Accepted constraints: admin-only access, encrypted archives, and automatic expiry after seven days. Proposed implementation notes mention an ExportJob table, AES-GCM keys, a worker module, a signed download route, and a cleanup cron. Preserve the accepted constraints without turning the issue into an implementation plan or inventing an authoritative source.",
+      "expectedSkill": "to-tickets",
+      "checks": [
+        "Frames the issue around the admin audit-export outcome and observable behavior.",
+        "Carries the accepted access, encryption, and expiry constraints directly because no durable source exists.",
+        "Does not invent a spec or ADR reference.",
+        "Omits the proposed table, encryption-key mechanics, worker placement, route mechanics, and cleanup implementation.",
+        "Includes bounded scope or non-goals and behavior-level acceptance signals."
+      ]
     }
   ],
   "traceExpectations": [
     "Program shape is resolved only when consequential internal decisions remain open, and established local patterns can satisfy the checkpoint.",
     "Tickets are tracer-bullet vertical slices through relevant layers.",
     "Tickets are independently reviewable and mergeable where possible.",
-    "Issue descriptions preserve outcome contracts and trace accepted decisions to an authoritative spec or ADR while keeping rationale and internal mechanics out of the issue body.",
-    "When no durable source exists, tickets carry concise accepted constraints instead of depending on hidden conversation context.",
     "Frontier means tickets whose blockers are clear.",
     "Granularity review asks whether tickets are too coarse, too fine, or wrongly blocked.",
     "Cleanup follows compatibility and rollout."

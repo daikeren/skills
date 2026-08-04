@@ -51,7 +51,7 @@ This repo now includes lightweight tool-specific adapters:
 - `setup-repo-context`: detect and maintain lightweight repo-specific context from local evidence.
 - `strategy-to-options`: turn a strategic question into 2-4 real options.
 - `to-spec`: convert an agreed direction into a lightweight implementation spec.
-- `to-tickets`: break specs into independently reviewable and releasable slices.
+- `to-tickets`: draft outcome-focused implementation issues or break specs into independently reviewable and releasable slices.
 - `architecture-review`: review architecture, dependencies, data flow, and migration risk.
 - `product-surface-review`: review workflows, states, accessibility, trust, and support burden.
 - `security-privacy-review`: review permissions, sensitive data, trust boundaries, and abuse cases.
@@ -71,7 +71,7 @@ This repo now includes lightweight tool-specific adapters:
 | Set up or refresh repo-specific working context | `setup-repo-context` |
 | Compare strategic or technical options | `strategy-to-options` |
 | Turn a direction into an implementation spec | `to-spec` |
-| Slice work into releasable tickets | `to-tickets` |
+| Draft an implementation issue or slice work into releasable tickets | `to-tickets` |
 | Review architecture or migration risk | `architecture-review` |
 | Review product surfaces and workflows | `product-surface-review` |
 | Review security, privacy, or abuse risk | `security-privacy-review` |

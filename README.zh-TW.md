@@ -51,7 +51,7 @@ Pi 會從 `.pi/skills` 與 `.agents/skills` 載入 project skills，從 `~/.pi/a
 - `setup-repo-context`：從本地證據偵測並維護精簡的 repo-specific context。
 - `strategy-to-options`：把策略或技術問題轉成 2–4 個實際選項。
 - `to-spec`：把已確認的方向轉成精簡的 implementation spec。
-- `to-tickets`：把 spec 拆成可獨立 review 與 release 的 slices。
+- `to-tickets`：撰寫 outcome-focused implementation issue，或把 spec 拆成可獨立 review 與 release 的 slices。
 - `architecture-review`：review architecture、dependencies、data flow 與 migration risk。
 - `product-surface-review`：review workflows、states、accessibility、trust 與 support burden。
 - `security-privacy-review`：review permissions、sensitive data、trust boundaries 與 abuse cases。
@@ -71,7 +71,7 @@ Pi 會從 `.pi/skills` 與 `.agents/skills` 載入 project skills，從 `~/.pi/a
 | 建立或更新 repo-specific context | `setup-repo-context` |
 | 比較策略或技術選項 | `strategy-to-options` |
 | 把方向轉成 implementation spec | `to-spec` |
-| 把工作拆成可 release 的 tickets | `to-tickets` |
+| 撰寫 implementation issue，或把工作拆成可 release 的 tickets | `to-tickets` |
 | Review architecture 或 migration risk | `architecture-review` |
 | Review product surfaces 與 workflows | `product-surface-review` |
 | Review security、privacy 或 abuse risk | `security-privacy-review` |

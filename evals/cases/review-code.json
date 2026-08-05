@@ -1,6 +1,6 @@
 {
   "skill": "review-code",
-  "version": 10,
+  "version": 12,
   "purpose": "Check that review tasks produce findings-first code review instead of style commentary or summaries first.",
   "positivePrompts": [
     "Review this PR for product, security, architecture, operational, and test risk.",
@@ -136,7 +136,24 @@
         "Recognizes that deployment.launch validates the requested specification against the immutable accepted release before durable queuing.",
         "Does not demand duplicated tenant, signature, artifact, runtime, or network-policy checks in application code when the authoritative control-plane boundary supplies them.",
         "Does not invent duplicate deployment jobs contradicted by request-scoped idempotency and serialized queue admission.",
+        "Omits Human confirmation questions because the authoritative contract settles the high-consequence controls in this bounded review; it may report the scoped integration-test gap without asking a human to walk through or re-prove those guarantees.",
         "Keeps residual verification gaps separate from current defects and scoped to the supplied contract."
+      ]
+    },
+    {
+      "id": "high-risk-human-confirmation",
+      "prompt": "Review the bounded checkout route against its stated auth, payment-safety, and 10,000-concurrent-user requirements. Identify what the patch proves and give me only the high-risk questions a human still needs to answer before release.",
+      "expectedSkill": "review-code",
+      "fixtures": [
+        "high-risk-human-confirmation.md"
+      ],
+      "checks": [
+        "Does not invent a current implementation defect solely because the bounded fixture omits the internals of requireSession, checkout.start, or deployment controls.",
+        "Asks a target-specific auth question that walks through both expiry and revocation during the long-lived session and identifies the contract or lifecycle evidence needed for each path.",
+        "Asks a target-specific payment question that distinguishes provider failure states, challenges a timeout after acceptance, and requests idempotency or reconciliation evidence.",
+        "Asks where rate limiting, quotas, backpressure, and overload behavior are enforced for the stated 10,000-concurrent-user requirement and requests capacity evidence.",
+        "Keeps the human-confirmation list to the three material changed surfaces, states why each answer changes readiness, labels these unsatisfied release-contract questions as required before release, and returns Block without inventing a current defect; it must not return an approval verdict while those required confirmations remain unresolved.",
+        "Keeps human-confirmation questions separate from findings and does not ask about unrelated migrations, logging, or code style."
       ]
     }
   ],
@@ -163,6 +180,10 @@
     {
       "text": "The findings and verdict reflect the relevant product, security/privacy, architecture, operations, and test lenses without narrating lenses that do not affect the target.",
       "allowsNotApplicable": false
+    },
+    {
+      "text": "When a changed high-consequence surface still depends on an unproven human-owned intent, operational guarantee, or failure response, the review asks one to three scenario-based confirmation questions, explains why each changes readiness, names the evidence or decision needed, and keeps them separate from findings; otherwise it omits the layer.",
+      "allowsNotApplicable": true
     }
   ]
 }

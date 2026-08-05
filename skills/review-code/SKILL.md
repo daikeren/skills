@@ -41,13 +41,27 @@ Use this lens when a change combines lifecycle states, async work, retries or fa
 5. Inspect ownership across async boundaries: cancellation, request generation, idempotency, late responses, partial persistence, retries, and swallowed errors.
 6. Compare tests with the model. End-state examples alone are insufficient when transition, race, timeline, or cross-path behavior is the risk; expect table-driven or adversarial regression coverage for the reachable invariant.
 
+## Human Confirmation Layer
+
+Use this layer only when a high-consequence surface depends on intent, an operational guarantee, or a failure response that the diff, repository, and available runtime evidence cannot establish. Typical surfaces include authentication and authorization, payments, destructive operations, migrations, sensitive data, external services, abuse controls, and capacity limits.
+
+1. Inspect first. Answer from code, contracts, tests, configuration, and safe executable evidence when possible. If the evidence already supports a reachable defect, report the finding instead of asking a human to explain it away. If an explicit guarantee settles the concern, do not ask the author to re-prove it.
+2. Ask only questions whose answers could change a finding, release disposition, or required verification. Prefer one to three target-specific questions over a generic checklist. Omit this layer when no such question remains.
+3. Anchor each question to the changed surface and challenge a concrete lifecycle, failure, abuse, or load scenario. Ask the responsible human to walk through the control or failure path, not merely confirm that it is handled. For example:
+   - Auth: "How is authorization enforced on this path? Walk me through token expiry, revocation, tenant or privilege changes, and an in-flight request."
+   - Payments: "What are the distinct payment failure paths? If the provider times out after accepting the request, what prevents a duplicate charge and how is the result reconciled?"
+   - Capacity and abuse: "This path must support 10,000 concurrent users. Where are rate limiting, quotas, backpressure, and overload behavior enforced, and what evidence establishes the limit?"
+   - Destructive data changes: "If old writers, partial failure, or rollback overlap this migration, which source remains authoritative and how are late writes recovered?"
+4. State why each answer matters and what evidence would resolve it, such as a contract, trace, configuration, test, runbook, load result, or owner decision. Do not require a particular mechanism when the contract permits alternatives.
+5. Keep human confirmation separate from findings. Label whether the unanswered question is required before release or recommended follow-up based on consequence and the release contract; a question is not automatically blocking. When required confirmation remains unresolved, use a `Block` verdict and say that the gate is unanswered confirmation rather than a current defect. Never convert low-confidence speculation into a defect or backlog item merely because the surface is high-risk.
+
 ## Output
 
 Lead with a release verdict, then findings with blocking items first and severity order within each group:
 
-- `Block`: at least one finding must be resolved or explicitly risk-accepted before merge or release.
-- `Approve with follow-ups`: no blocking findings, but non-blocking work remains.
-- `Approve`: no actionable findings.
+- `Block`: at least one blocking finding or required human-confirmation question must be resolved or explicitly risk-accepted before merge or release. A required confirmation can block readiness without becoming a finding; say when no current defect is established.
+- `Approve with follow-ups`: no blocking findings or required human confirmation remains, but non-blocking work or recommended human follow-up remains.
+- `Approve`: no actionable findings or unresolved required human confirmation.
 
 Use severity for impact if the issue occurs, independent of whether it blocks this release:
 
@@ -92,8 +106,9 @@ enforce the admin permission and add a non-admin 403 test.
 
 Then include:
 
-- Explicitly say `No blocking findings` when the verdict is not `Block`.
+- Explicitly say `No blocking findings` when the verdict is not `Block`. When required human confirmation is the only release gate, say `No current defect established` and identify the unanswered gate instead.
 - Open questions or assumptions that affect a finding or readiness.
+- `Human confirmation`, only when the conditional layer applies: one to three scenario-based questions after the findings, each with why it affects readiness, the evidence or decision needed, and whether resolution is required before release or is a recommended follow-up. Do not repeat questions already answered by findings or authoritative evidence.
 - For a broad review, concise coverage only when it helps a reader understand material scope or an evidence gap. Omit process narration for a bounded review.
 - Change summary only when the user requested it or it materially helps explain the target; place it after findings.
 - Verification reviewed or missing when it affects confidence or release readiness.
@@ -122,3 +137,4 @@ Ask subagents for concise findings only. Budget each subagent to at most 5 findi
 - Omitted mechanisms: before finalizing, reconcile each finding based on an absent field, argument, or mechanism against explicit external, caller-managed, and runtime guarantees. If a guarantee resolves that concern, remove it as a defect and do not condition approval on re-proving the omitted implementation. Retain such a finding only when visible code or documented operation semantics show a bypass, conflicting data flow, or another concrete reachable violation.
 - Release disposition: every finding distinguishes impact from merge/release blocking status; state evidence confidence or occurrence likelihood when either changes the judgment.
 - Tail risk: low likelihood does not downgrade catastrophic, irreversible, cross-tenant, authorization, privacy, data-loss, or financial harm into a non-blocker.
+- Human confirmation: for unresolved high-consequence assumptions only, ask a small number of changed-surface-specific questions that challenge concrete lifecycle, failure, abuse, or load scenarios and name the evidence or decision needed; omit generic or already-answered questions.

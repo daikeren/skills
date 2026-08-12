@@ -1,6 +1,6 @@
 {
   "skill": "review-code",
-  "version": 10,
+  "version": 11,
   "purpose": "Check that review tasks produce findings-first code review instead of style commentary or summaries first.",
   "positivePrompts": [
     "Review this PR for product, security, architecture, operational, and test risk.",
@@ -101,6 +101,37 @@
       ]
     },
     {
+      "id": "architecture-rework-required",
+      "prompt": "Review this delivery-policy PR for release safety. If its architecture is the root problem, do not stop at incremental patches: compare credible alternatives and say whether a bounded rework is required.",
+      "expectedSkill": "review-code",
+      "fixtures": [
+        "architecture-rework-diff.md"
+      ],
+      "checks": [
+        "Runs an architecture-fit assessment before prescribing local fixes, mapping the published policy, per-client overrides, materialized delivery state, writers, and immediate and queued consumers.",
+        "Reports the concrete new-client AI fallback and immediate-versus-queued precedence mismatch as reachable release defects.",
+        "Identifies the shared root cause: ClientDeliveryState overloads policy projection, per-client lifecycle, dashboard indexing, and reply authorization while several paths write or reconcile it.",
+        "Distinguishes required provider, queue, locking, and retry boundaries from accidental duplicated policy state and decision logic.",
+        "Compares keep-and-fix with a feasible alternative based on published policy plus real per-client overrides and one side-effect-free effective-decision resolver; does not introduce a durable queue without a stated work-lifecycle requirement.",
+        "Returns Block with architectural rework required, bounds the redesign and reusable parts, and specifies matrix and race verification instead of proposing a pile of compensating patches or judging by diff size."
+      ]
+    },
+    {
+      "id": "architecture-keep-and-fix",
+      "prompt": "Review this structurally significant delivery-policy patch for release safety. Check architecture fit and alternatives, but require rework only if the evidence supports it.",
+      "expectedSkill": "review-code",
+      "fixtures": [
+        "architecture-keep-and-fix-diff.md"
+      ],
+      "checks": [
+        "Recognizes the coherent architecture: one published policy source, real per-client override state, one pure resolver, and intentionally separate transaction and provider boundaries.",
+        "Reports the queued path's use of batch.created_at as the concrete temporal defect because final admission must evaluate expiry at the current admission time.",
+        "Selects keep-and-fix over redesign: pass the current admission time and add an expiry-between-enqueue-and-admission regression test.",
+        "Does not mark architectural rework required, invent additional persisted state, or treat the structurally significant diff as evidence that a rewrite is needed.",
+        "Keeps the defect's impact and release disposition evidence-based rather than upgrading it solely because the architecture-fit lens ran."
+      ]
+    },
+    {
       "id": "deployment-policy-bypass",
       "prompt": "Review the model-deployment scheduling change in the bounded workspace for release safety. Return a findings-first verdict with concrete evidence and bounded verification gaps.",
       "expectedSkill": "review-code",
@@ -158,6 +189,10 @@
     },
     {
       "text": "For a stateful review, the review reconstructs the relevant state or event ordering, identity or idempotency boundary, ownership, and fallback behavior needed to judge the target.",
+      "allowsNotApplicable": true
+    },
+    {
+      "text": "For a structurally significant change, the review evaluates architecture fit and credible alternatives before accepting incremental fixes; it recommends bounded rework only with a supported root cause and feasible target shape.",
       "allowsNotApplicable": true
     },
     {

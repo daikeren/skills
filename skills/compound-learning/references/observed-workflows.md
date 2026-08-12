@@ -61,6 +61,15 @@ not here.
 - Pitfalls: treating infrastructure or fixture failures as skill failures, or accumulating model-specific advice in a portable public skill.
 - Candidate home: skill-pack maintenance conventions and targeted live-eval tooling.
 
+### Outcome pass is not Skill value
+
+- Lesson: a successful Skill-enabled run proves task success, not that the Skill was selected, loaded, or added marginal value.
+- Applies when: deciding whether to add, publish, retain, expand, or retire an agent Skill.
+- Evidence: a source-backed survey and iterative public review separated availability, routing, loading, adherence, and outcome, then found that no-instruction baselines and underpowered null results still invite the same attribution error; see [Agent Skill Eval 最危險的假陽性](https://andydai.dev/posts/agent-skill-eval-false-positive/).
+- Practice: compare the full Skill with a same-goal terse instruction across multiple tasks and trials; add no-instruction or length-matched conditions only for the questions they answer, and report `unknown` when the sample cannot distinguish the arms.
+- Pitfalls: crediting the Skill for an outcome pass, treating a blank prompt as the only baseline, or reading a small-sample null as proof that the full Skill has no value.
+- Candidate home: skill-pack eval conventions and comparative live-eval tooling.
+
 ## Reference Repos
 
 - `mattpocock/skills`: keep skills small, composable, and daily usable; distinguish user-invoked orchestration from model-invoked discipline; slice work as vertical tracer bullets with blocking edges.

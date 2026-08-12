@@ -1,6 +1,6 @@
 {
   "skill": "architecture-review",
-  "version": 1,
+  "version": 2,
   "purpose": "Check that architecture reviews map current state before recommendations.",
   "positivePrompts": [
     "Review the current service boundaries, runtime data flow, and migration risks in this system architecture.",
@@ -32,6 +32,32 @@
       ]
     },
     {
+      "id": "abstraction-and-dependency-alternatives",
+      "prompt": "Evaluate a proposal to add a third-party workflow engine and a generic Step<T> abstraction for one synchronous two-step import. The existing job runner already retries the whole import, there is no second workflow planned, and correctness requires both steps to share one transaction. Compare credible architecture alternatives rather than only reviewing the proposed library usage.",
+      "expectedSkill": "architecture-review",
+      "checks": [
+        "Names the import outcome, shared-transaction invariant, and current job-runner capability before judging the proposed abstraction or dependency.",
+        "Compares keep-and-add, a narrow direct implementation using the existing runner, and any other credible alternative by lifecycle complexity, correctness, reversibility, and evidence.",
+        "Challenges speculative generality without treating fewer dependencies or abstractions as inherently better.",
+        "Recommends the smallest credible current shape and states a concrete revisit condition that could justify the workflow engine later."
+      ]
+    },
+    {
+      "id": "structural-root-cause-rework",
+      "prompt": "Review the architecture of this delivery-policy release candidate. Decide whether the current shape can be repaired incrementally or requires a bounded redesign, and compare credible alternatives.",
+      "expectedSkill": "architecture-review",
+      "fixtures": [
+        "architecture-rework-diff.md"
+      ],
+      "checks": [
+        "Maps the published policy, per-client override lifecycle, materialized delivery-state projection, writers, and immediate, queued, dashboard, and reply-authorization paths before recommending a target shape.",
+        "Connects the new-client AI fallback and cross-path precedence disagreement to the overloaded ClientDeliveryState representation and multiple policy writers.",
+        "Distinguishes necessary provider claim, queue locking, and retry boundaries from accidental duplicated policy state, reconciliation, and decision branches.",
+        "Compares keep-and-fix with a feasible published-policy plus real-override plus pure-resolver alternative, and does not add a durable work queue without a work-lifecycle requirement.",
+        "Recommends Block with architectural rework required because the shared structural root cause already causes reachable invariant failures, while bounding the redesign and preserving reusable boundaries."
+      ]
+    },
+    {
       "id": "low-likelihood-destructive-migration",
       "prompt": "Review this migration plan. Late writes from an old worker are uncommon; decide whether the risk blocks release or can be tracked separately.",
       "expectedSkill": "architecture-review",
@@ -47,6 +73,8 @@
   ],
   "traceExpectations": [
     "Current-state mapping appears before target-state recommendation.",
+    "Structural proposals are tested for necessity and compared with a small set of credible alternatives that includes the current or keep-and-fix shape.",
+    "A rewrite or redesign is recommended only when evidence shows that incremental repair preserves a material architectural root cause.",
     "Target shape and migration appear only when requested or justified by a finding.",
     "Findings separate impact severity, evidence confidence, occurrence likelihood, and release disposition.",
     "Low-likelihood catastrophic or irreversible risks remain blocking when supported by concrete evidence.",

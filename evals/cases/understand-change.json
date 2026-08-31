@@ -1,6 +1,6 @@
 {
   "skill": "understand-change",
-  "version": 4,
+  "version": 5,
   "purpose": "Check that code-change explanations build a usable mental model with the lightest effective medium while preserving strong artifact safety when HTML is justified.",
   "positivePrompts": [
     "Teach me this pull request so I can safely modify the same flow next week.",
@@ -68,6 +68,12 @@
       "checks": [
         "Chooses and, when non-obvious, briefly justifies a medium based on the learner goal and cross-layer complexity.",
         "Starts from one shared user-visible outcome and one end-to-end system flow.",
+        "Uses the smallest fitting inline representation for the decisive relationship and does not stack redundant diagrams, trees, tables, or maps.",
+        "Builds visual relationships from the supplied evidence and labels any inferred or proposed nodes, edges, or order instead of presenting them as observed behavior.",
+        {
+          "text": "When a semantic diff is used, establishes or confirms its baseline, explains unfamiliar notation, and states the behavioral consequence; otherwise uses a complete shape when omission would hide ownership or order.",
+          "allowsNotApplicable": true
+        },
         "Groups the walkthrough by concept and contract boundary instead of mechanically separating backend and frontend files.",
         "Uses only one non-duplicative secondary representation after the end-to-end trace instead of repeating the same contracts as a map, checkpoints, and another layer-by-layer walkthrough.",
         "Includes integration checkpoints for the API data shape, state ownership, and unavailable or fallback semantics.",
@@ -81,6 +87,10 @@
     "The teaching medium is selected from the learner goal and change complexity rather than fixed in advance.",
     "Small one-off changes remain concise and do not create unnecessary artifacts or quizzes.",
     "Background and intuition precede implementation details, and the walkthrough follows runtime, causal, or data-flow order.",
+    {
+      "text": "When an inline visual is useful, its shape matches the relationship being taught and it contains only necessary evidence-backed calls, files, states, or boundaries.",
+      "allowsNotApplicable": true
+    },
     {
       "text": "When a change spans concepts, the explanation keeps one end-to-end story with important contract boundaries and evidence.",
       "allowsNotApplicable": true

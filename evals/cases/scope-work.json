@@ -18,14 +18,26 @@
       "checks": [
         "Identifies product goal, user impact, technical context, constraints, risks, stakeholders, and decision horizon.",
         "Pressure-tests fuzzy terms, edge cases, contradictions, and hidden tradeoffs without turning scoping into a long interview.",
-        "Asks only blocking questions or states safe assumptions.",
+        "Asks only the current blocking frontier, defers dependent questions, or states safe assumptions.",
         "Converts scoped context into a next useful action."
+      ]
+    },
+    {
+      "id": "dependent-questions-stay-deferred",
+      "prompt": "We may replace our billing provider, but we have not decided whether the goal is fewer payment failures, more international payment methods, or lower cost. Help me scope the decision. Provider selection, data migration, and rollout details may matter later, but do not turn this into an exhaustive interview or ask me for facts you can inspect yourself.",
+      "expectedSkill": "scope-work",
+      "checks": [
+        "Treats the product goal as an upstream decision that must be settled before downstream provider, migration, or rollout choices.",
+        "Asks only the current blocking frontier and explicitly defers questions whose answers depend on the unsettled goal.",
+        "Includes a recommended answer when it materially helps the user decide without pretending the user has accepted it.",
+        "Keeps the questioning bounded and owns discoverable facts instead of delegating research back to the user."
       ]
     }
   ],
   "traceExpectations": [
     "Read-only context gathering precedes recommendations.",
     "Questions are limited to those that can change scope, design, rollout, or risk.",
+    "Dependent questions wait until their prerequisite decisions are settled.",
     "Risks include product, architecture, security/privacy, operations, cost, and team speed."
   ]
 }

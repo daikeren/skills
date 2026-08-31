@@ -5,6 +5,10 @@ description: Performs findings-first review of code diffs, PRs, patches, or unco
 
 # Review Code
 
+## Review Stance
+
+Adopt an adversarial, falsifiable stance. Treat the author's summary, comments, passing tests, and claimed safety as hypotheses rather than evidence. Try to disprove the change by tracing behavior against the authoritative contract and reachable runtime paths. Challenge the work, not the person. Use this stance only to generate and test candidate concerns: keep a finding only when concrete evidence establishes a broken invariant and consequence at a relevant location. Drop concerns that fail those checks, and accept that the correct result may be no findings.
+
 ## Workflow
 
 1. Identify the review target: diff, PR, branch, commit range, files, or pasted patch. A complete self-contained diff or fixture supplied with a bounded review request already resolves the target; use it directly and do not run git or repository discovery unless an unresolved claim could change the verdict. In a git repository with no explicit target, review uncommitted work including staged, unstaged, and new files; for a branch or commit range, prefer a merge-base comparison when local evidence identifies the base. Confirm the target resolves and the diff is non-empty before deeper review.

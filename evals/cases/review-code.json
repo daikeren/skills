@@ -1,6 +1,6 @@
 {
   "skill": "review-code",
-  "version": 11,
+  "version": 12,
   "purpose": "Check that review tasks produce findings-first code review instead of style commentary or summaries first.",
   "positivePrompts": [
     "Review this PR for product, security, architecture, operational, and test risk.",
@@ -35,6 +35,7 @@
       "checks": [
         "Says clearly when there are no actionable findings.",
         "Does not invent low-value style issues.",
+        "Does not force a finding merely to maintain an adversarial review stance.",
         "Names residual risk or verification limits briefly.",
         "Keeps the change summary secondary."
       ]
@@ -164,6 +165,7 @@
       ],
       "checks": [
         "Says clearly that no current implementation defect or material release risk is supported by the supplied patch; a concise non-blocking missing-validation gap is allowed.",
+        "Does not accept the claimed control-plane safety at face value: verifies it against the supplied contract and visible launch path, then drops the policy-bypass concern when the evidence does not survive.",
         "Recognizes that deployment.launch validates the requested specification against the immutable accepted release before durable queuing.",
         "Does not demand duplicated tenant, signature, artifact, runtime, or network-policy checks in application code when the authoritative control-plane boundary supplies them.",
         "Does not invent duplicate deployment jobs contradicted by request-scoped idempotency and serialized queue admission.",
@@ -198,6 +200,10 @@
     {
       "text": "The findings and verdict reflect the relevant product, security/privacy, architecture, operations, and test lenses without narrating lenses that do not affect the target.",
       "allowsNotApplicable": false
+    },
+    {
+      "text": "The review treats author claims as hypotheses and attempts to falsify them, but does not keep candidate concerns that lack a reachable broken invariant and concrete consequence.",
+      "allowsNotApplicable": true
     }
   ]
 }

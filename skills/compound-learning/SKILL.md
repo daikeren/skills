@@ -1,15 +1,15 @@
 ---
 name: compound-learning
-description: Reads and writes reusable engineering lessons before and after implementation, review, debugging, incidents, or research. Use when prior lessons may affect the work, or when work produced a validated solution, repeated command, decision criterion, pitfall, team convention, or workflow improvement that should make future agent or human work easier. Default to read/apply mode. Capture or update lessons only when the user explicitly asks or a repo instruction explicitly requires it; an existing lesson store alone is not write authorization.
+description: Use when retrieving a relevant prior lesson or capturing validated learning from completed work. Reading lessons does not authorize writing them.
 ---
 
 # Compound Learning
 
 ## Workflow
 
-1. Read before acting when the task resembles prior implementation, review, debugging, incident, research, or workflow-maintenance work. Check repo instructions and setup context for the configured lesson store path.
+1. Retrieve prior learning when the user requests it or a known lesson, recurring failure, or prior decision could materially change this task. Ordinary implementation or review alone is not a trigger. Use the configured lesson store and task-specific search terms; stop when the relevant question is answered.
 2. Choose the mode explicitly. Read/apply mode is the default and never writes. Capture/maintenance mode requires an explicit user request or a repo instruction that explicitly requires lesson maintenance. An existing store decides where an authorized note belongs, not whether it is authorized.
-3. If no configured store exists, search likely local lesson homes before deciding there is no prior learning: `.agents/lessons/`, `.agents/lessons.md`, `docs/lessons/`, `docs/lessons.md`, `docs/engineering/lessons/`, `docs/agent-lessons.md`, this skill's `references/observed-workflows.md` when maintaining this pack, postmortems, retrospectives, and runbooks.
+3. If relevant prior learning is still needed and no store is configured, inspect the likely homes suggested by repository evidence, such as: `.agents/lessons/`, `.agents/lessons.md`, `docs/lessons/`, `docs/lessons.md`, `docs/engineering/lessons/`, `docs/agent-lessons.md`, this skill's `references/observed-workflows.md` when maintaining this pack, postmortems, retrospectives, and runbooks.
 4. Query narrowly with task terms, affected files, domains, commands, failure modes, and review lenses. Load only relevant lessons and treat stale lessons as candidates for correction, not unquestioned truth.
 5. Apply lessons as working constraints. If current repo evidence conflicts with a lesson, prefer current evidence and note the conflict. Update or supersede the lesson only in authorized capture/maintenance mode; otherwise recommend the change without writing it.
 6. Capture only validated learning. Do not preserve speculation, transient debugging guesses, secrets, private customer data, or one-off trivia.

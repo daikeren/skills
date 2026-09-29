@@ -1,6 +1,6 @@
 ---
 name: research-brief
-description: Produces source-backed research briefs with clear evidence quality, uncertainty, evidence conclusions, and optional provisional recommendations. Use when the primary deliverable is verified current evidence about vendors, APIs, tools, markets, regulations, competitors, standards, pricing, compatibility, or other fast-moving claims. Use strategy-to-options instead when the evidence is already sufficient and the primary deliverable is a choice among decision-ready paths; for mixed work, research first and then form options.
+description: Use when researching current vendors, pricing, APIs, or compatibility to produce a source-backed evidence brief. A choice based on settled evidence belongs to strategy-to-options.
 ---
 
 # Research Brief

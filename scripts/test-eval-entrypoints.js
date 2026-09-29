@@ -55,6 +55,56 @@ function casePath(repo, name) {
   return path.join(repo, "evals", "cases", name);
 }
 
+// Exercise the real entrypoint without a model: only metadata is in the prompt,
+// while the isolated workspace contains the frozen catalog and its references.
+const catalogRepo = createRepo();
+try {
+  const mock = path.join(catalogRepo.tempRoot, "catalog-agent");
+  fs.writeFileSync(mock, `#!${process.execPath}
+const assert = require("assert/strict");
+const fs = require("fs");
+const input = fs.readFileSync(0, "utf8");
+if (!input.startsWith("Available skills")) {
+  process.stdout.write("{}"); // Incomplete mock judgments are deliberately not behavioral evidence.
+} else {
+  assert(!input.includes("## Workflow"));
+  assert(!input.includes("# Stateful Integration Lens"));
+  const catalog = JSON.parse(input.slice(input.indexOf("["), input.indexOf("\\n\\nComplete the task")));
+  assert.equal(catalog.length, 15);
+  const entry = catalog.find(item => item.name === "review-code");
+  assert(fs.readFileSync(entry.path, "utf8").includes("references/stateful-integrations.md"));
+  assert(fs.readFileSync("skill-catalog/review-code/references/stateful-integrations.md", "utf8").includes("event timeline"));
+  assert(!fs.existsSync("evals/oracles"));
+  assert(!fs.existsSync("scripts/run-live-evals.js"));
+  process.stdout.write("Catalog entry and conditional reference read successfully.");
+}
+`, { mode: 0o700 });
+  const env = {
+    LIVE_EVAL_COMMAND: mock,
+    LIVE_EVAL_JUDGE_COMMAND: mock,
+    LIVE_EVAL_CASES: "review-code/deployment-policy-bound",
+    LIVE_EVAL_SKILL_LOADING: "catalog",
+    LIVE_EVAL_COMPARE_BASELINE: "0",
+    LIVE_EVAL_CONCURRENCY: "1"
+  };
+  const result = run(catalogRepo.repo, "scripts/run-live-evals.js", env);
+  expectFailure(result, "expectations needing review", "catalog mock judgments");
+  const evidence = JSON.parse(fs.readFileSync(path.join(catalogRepo.repo, "evals/results/live-latest.json"), "utf8"));
+  assert.equal(evidence.skillLoading, "catalog");
+  assert.equal(evidence.claimCalibration.eligibleForComparativeClaim, false);
+  assert.equal(Object.keys(evidence.identities.candidateBySkill).length, 15);
+  assert.equal(evidence.results[0].status, "completed");
+  assert.match(evidence.results[0].outputPreview, /Catalog entry and conditional reference read successfully/);
+  assert(evidence.results[0].taskWorkspaceIdentity.files.some(file => file.path === "skill-catalog/review-code/references/stateful-integrations.md"));
+  expectFailure(run(catalogRepo.repo, "scripts/run-live-evals.js", { ...env, LIVE_EVAL_COMPARE_BASELINE: "1" }), "diagnostic-only", "catalog comparison boundary");
+  expectFailure(run(catalogRepo.repo, "scripts/run-live-evals.js", { ...env, LIVE_EVAL_SKILL_LOADING: "invalid" }), "must be bundle or catalog", "catalog invalid mode");
+  const oracle = JSON.parse(fs.readFileSync(path.join(catalogRepo.repo, "evals/oracles/review-code/deployment-policy-bound.json"), "utf8"));
+  fs.appendFileSync(path.join(catalogRepo.repo, "skills/compound-learning/SKILL.md"), `\n${oracle.leakageGuards[0]}\n`);
+  expectFailure(run(catalogRepo.repo, "scripts/run-live-evals.js", env), "oracle guard", "unselected catalog skill leakage");
+} finally {
+  fs.rmSync(catalogRepo.tempRoot, { recursive: true, force: true });
+}
+
 const entrypoints = [
   { label: "validator", script: "scripts/validate-skills.js", env: {} },
   { label: "routing-diagnostic", script: "scripts/run-evals.js", env: {} },

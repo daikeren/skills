@@ -1,6 +1,6 @@
 ---
 name: understand-change
-description: Explains changed software so a person can internalize behavior, trace causal flow, and participate in later work. Use when someone asks to teach, explain, or walk through a change, restore a mental model, check comprehension, or prepare to modify the same system later; choose the lightest useful teaching medium, and use a review skill for defect or release-safety judgments.
+description: Use when teaching or walking through a software change in causal learning order so someone can understand its behavior and modify it later. Reviews of defects belong to review-code.
 ---
 
 # Understand Change

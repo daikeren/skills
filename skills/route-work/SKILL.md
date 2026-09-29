@@ -1,6 +1,6 @@
 ---
 name: route-work
-description: Recommends a proportionate path for product and engineering work. Use when the user is unsure what capability or skill fits, explicitly asks for routing help, or needs a suggested flow across scoping, research, prototyping, decisions, specs, tickets, implementation, change understanding, review, and learning. Do not use it for an already-bounded task whose next action and verification path are obvious; execute that work directly. Treat the repository's skills as available options rather than a closed world.
+description: Use when the user asks which skill or workflow fits an unclear task. Skip routing for bounded work whose next action is already clear.
 ---
 
 # Route Work

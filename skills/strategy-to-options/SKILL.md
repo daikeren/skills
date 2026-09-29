@@ -1,6 +1,6 @@
 ---
 name: strategy-to-options
-description: Turns a framed strategic or technical decision with sufficient supporting evidence into 2-4 decision-ready options with tradeoffs and bounded pressure-testing. Use when the primary deliverable is a choice about what to do, which path to take, whether to build, buy, or defer, or how to balance speed, risk, cost, reversibility, product impact, and team constraints. Use scope-work first when goals or constraints are unframed, and research-brief first when current external facts remain decision-critical and unverified.
+description: Use when comparing build, buy, defer, or other concrete options for a framed decision with sufficient evidence. Weigh cost, risk, and reversibility; honor delegated choices.
 ---
 
 # Strategy To Options
@@ -15,14 +15,14 @@ description: Turns a framed strategic or technical decision with sufficient supp
 6. Generate 2-4 real options. Include the conservative default, a faster path, a more durable path, and a no-build or defer option when plausible.
 7. Score each option on user impact, architecture fit, security/privacy, operational burden, cost, team speed, reversibility, and time to learn.
 8. Name the condition under which each option is the right choice. Avoid pretending one path is universally best.
-9. Human owns the choice; agent owns the facts, tradeoffs, recommendation, and uncertainty. Present options and stop for user choice before spec, tickets, or implementation.
-10. If unattended/headless and a downstream workflow requires a choice, select the recommended option only as an explicit assumption, record why, and name what evidence should revisit it.
-11. Recommend the smallest decisive next step without executing it: experiment, prototype, spec, implementation slice, vendor check, or stakeholder decision.
+9. Respect the task's decision authority. For an options-only request, present the comparison and recommendation. If the user has delegated the choice and downstream work, choose within those bounds, explain the decision briefly, and continue to the requested outcome. Stop only for a material decision or action outside existing authorization.
+10. Being unattended does not grant decision authority. Within delegated bounds, record material low-risk assumptions and what would change the choice; leave unauthorized consequential commitments pending while completing independent work.
+11. Complete the authorized next step when continuation is part of the request. Otherwise name the smallest useful next action without executing it.
 12. If a domain term or decision crystallizes, suggest optional glossary or ADR capture only when it will help future work; do not force docs into every decision.
 
 ## Output
 
-Return:
+For an options-only request, return the useful subset of:
 
 - Decision: what choice is being made and by when.
 - Options: 2-4 options with what changes, why it works, tradeoffs, cost, risk, reversibility, and speed.
@@ -31,6 +31,8 @@ Return:
 - Choose this when: a short rule for selecting each option.
 - Decision point: the user choice needed, or the unattended assumption used.
 - Next step: the smallest action that reduces uncertainty or moves delivery forward.
+
+When continuation is authorized, keep the comparison proportionate and return the completed downstream work with its verification and any material remaining decision.
 
 Example option:
 
@@ -46,4 +48,4 @@ log. Choose this when billing accuracy matters more than unit cost this year.
 - Options cover product value, architecture fit, security/privacy, operations, cost, team speed, and time to learn.
 - No-build, defer, or vendor paths are included when plausible.
 - The recommendation names when it should be revisited.
-- The output stops after options unless the user has already chosen or an unattended assumption is explicitly recorded.
+- Options-only requests stop at a recommendation; delegated choices continue through the authorized outcome. Unattended execution does not expand permission.

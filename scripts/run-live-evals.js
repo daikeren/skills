@@ -115,6 +115,7 @@ let baselineKind = "terse";
 let concurrency = DEFAULT_CONCURRENCY;
 let modelConfiguration = "unknown";
 let repeats = DEFAULT_REPEATS;
+let skillLoading = "bundle";
 
 function usage() {
   console.error("Set LIVE_EVAL_AGENT=codex or LIVE_EVAL_AGENT=claude-code.");
@@ -124,6 +125,7 @@ function usage() {
   console.error("Optional: set LIVE_EVAL_COMPARE_BASELINE=1 to compare each selected case with a frozen baseline arm.");
   console.error("Optional: set LIVE_EVAL_BASELINE=terse, previous-skill, or no-instruction; terse is the primary baseline.");
   console.error("Optional: set LIVE_EVAL_PREVIOUS_SKILL_DIR for a previous-skill snapshot or LIVE_EVAL_CANDIDATE_SKILL_DIR for one bounded candidate ablation.");
+  console.error("Optional: set LIVE_EVAL_SKILL_LOADING=catalog for non-comparative discovery and on-demand reading diagnostics; bundle remains the default.");
   console.error("Optional: set LIVE_EVAL_CONCURRENCY, LIVE_EVAL_REPEATS, LIVE_EVAL_TIMEOUT_MS, LIVE_EVAL_MAX_FIXTURE_BYTES, or LIVE_EVAL_MAX_ARTIFACT_BYTES to positive integers.");
 }
 
@@ -178,6 +180,13 @@ function configureLimits() {
   concurrency = positiveIntegerEnv("LIVE_EVAL_CONCURRENCY", DEFAULT_CONCURRENCY);
   repeats = positiveIntegerEnv("LIVE_EVAL_REPEATS", DEFAULT_REPEATS);
   compareBaseline = booleanEnv("LIVE_EVAL_COMPARE_BASELINE", false);
+  skillLoading = process.env.LIVE_EVAL_SKILL_LOADING || "bundle";
+  if (!["bundle", "catalog"].includes(skillLoading)) {
+    throw new Error("LIVE_EVAL_SKILL_LOADING must be bundle or catalog");
+  }
+  if (skillLoading === "catalog" && compareBaseline) {
+    throw new Error("Catalog loading is diagnostic-only; omit LIVE_EVAL_COMPARE_BASELINE. Matched catalog baselines are not implemented.");
+  }
   baselineKind = normalizeBaselineKind(baselineKindInput || "terse");
   modelConfiguration = parseModelConfiguration(process.env.LIVE_EVAL_MODEL_CONFIG);
   if (baselineKindInput && !compareBaseline) {
@@ -607,6 +616,35 @@ function renderSkillBundle(skillName, sourceRoot = root) {
   return renderSkillDirectory(path.join(sourceRoot, "skills", skillName), skillName);
 }
 
+function materializeSkillCatalog(directories, workspace) {
+  const catalogRoot = path.join(workspace, "skill-catalog");
+  // Never overwrite task fixtures or an earlier catalog.
+  fs.mkdirSync(catalogRoot);
+  return Object.entries(directories).sort(([left], [right]) => left.localeCompare(right)).map(([skill, source]) => {
+    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(skill)) throw new Error("Invalid catalog skill name");
+    validateSkillArmDirectory(source, skill);
+    renderSkillDirectory(source, skill); // Reject symlinks and non-regular files before copying.
+    const destination = path.join(catalogRoot, skill);
+    fs.cpSync(source, destination, { recursive: true });
+    const text = readText(path.join(destination, "SKILL.md"));
+    const header = text.match(/^---\n([\s\S]*?)\n---/);
+    const lines = header ? header[1].split("\n") : [];
+    const index = lines.findIndex((line) => line.startsWith("description:"));
+    let description = index < 0 ? "" : lines[index].slice("description:".length).trim();
+    if (/^[>|][-+]?$/.test(description)) {
+      const block = [];
+      for (let next = index + 1; next < lines.length && (!lines[next].trim() || /^\s/.test(lines[next])); next += 1) {
+        block.push(lines[next].trim());
+      }
+      description = block.join(" ").trim();
+    } else if (/^(["']).*\1$/.test(description)) {
+      description = description.slice(1, -1);
+    }
+    if (!description) throw new Error(`${skill}: catalog description is missing`);
+    return { name: skill, description, path: `skill-catalog/${skill}/SKILL.md` };
+  });
+}
+
 function resolveArmDirectory(input, fallback) {
   const directory = input ? path.resolve(root, input) : fallback;
   if (!directory || !fs.existsSync(directory) || !fs.statSync(directory).isDirectory()) {
@@ -754,9 +792,15 @@ function requiresConcreteEvidence(expectation) {
   return /\b(command|output|evidence|read|reads|backend|authorization|permission|test|location|file|diff|patch|repo|context|fixture|sample-diff|artifact|html|render|browser|interaction)\b/i.test(expectation);
 }
 
-function buildSkillPrompt(skillBundle, data, item, fixtures, artifactDir) {
+function buildSkillPrompt(skillBundle, data, item, fixtures, artifactDir, catalog = null) {
   return [
-    `Use the following Agent Skill bundle:\n\n${skillBundle}`,
+    catalog
+      ? [
+          "Available skills (names, descriptions, and workspace-relative entrypoints):",
+          JSON.stringify(catalog, null, 2),
+          "Complete the task using the relevant skills, or work directly when none is needed. Read a chosen SKILL.md from its path, then read supporting files only when they apply. Do not load the whole catalog or narrate routing unless it matters to the answer."
+        ].join("\n\n")
+      : `Use the following Agent Skill bundle:\n\n${skillBundle}`,
     `Task: ${item.prompt}`,
     renderTaskFixtures(item, fixtures),
     "Workspace note: this is an intentionally bounded task snapshot and may omit the skill package, eval definitions, or unrelated repository surfaces. Do not treat those intentional omissions as task defects. Use supplied fixtures directly; inspect other workspace files only when they are relevant to the task.",
@@ -768,6 +812,7 @@ function buildSkillPrompt(skillBundle, data, item, fixtures, artifactDir) {
 }
 
 function buildPrompt(data, item, fixtures, artifactDir, options = {}) {
+  if (options.catalog) return buildSkillPrompt(null, data, item, fixtures, artifactDir, options.catalog);
   const skillDirectory = options.skillDirectory || path.join(root, "skills", data.skill);
   return buildSkillPrompt(renderSkillDirectory(skillDirectory, data.skill), data, item, fixtures, artifactDir);
 }
@@ -2267,6 +2312,7 @@ function buildRunArtifact(options) {
     fs.readFileSync(path.join(__dirname, "eval-workspace.js"))
   ].map((buffer) => buffer.toString("base64")).join("\n"));
   const materialUncertainty = [];
+  if (skillLoading === "catalog") materialUncertainty.push("Catalog loading diagnoses discovery and on-demand reading with the recorded skill roster. Selection must be checked in retained traces; missing read telemetry is unknown. This mode has no matched baseline and cannot support a comparative claim.");
   if (modelId === "unknown") materialUncertainty.push("Exact model identity was not supplied; this run cannot support a model-specific improvement claim.");
   if (modelConfiguration === "unknown") materialUncertainty.push("Exact model configuration was not supplied; configuration-specific claims remain unsupported.");
   if (modelConfiguration !== "unknown") materialUncertainty.push("Model configuration is operator-declared run metadata; the harness does not independently observe every provider setting.");
@@ -2316,6 +2362,7 @@ function buildRunArtifact(options) {
     reportedDimensions: QUALITY_DIMENSIONS,
     hypothesis: process.env.LIVE_EVAL_HYPOTHESIS || "unknown",
     comparisonEnabled: compareBaseline,
+    skillLoading,
     primaryBaseline: compareBaseline ? baselineKind : null,
     selectedCases: caseIdentities,
     taskDistribution: {
@@ -2387,6 +2434,7 @@ async function runCase(data, item, options = {}) {
     armIdentities,
     baselineOptions = {},
     candidateSkillDir,
+    catalogDirectories,
     codexHomes = {},
     frozenFixtures = null,
     frozenOracle = null,
@@ -2452,7 +2500,8 @@ async function runCase(data, item, options = {}) {
       baseline = await generateBaseline();
     }
 
-    const prompt = buildPrompt(data, item, fixtures, caseWorkspace.artifactDir, { skillDirectory: candidateSkillDir });
+    const catalog = catalogDirectories ? materializeSkillCatalog(catalogDirectories, caseWorkspace.workspace) : null;
+    const prompt = buildPrompt(data, item, fixtures, caseWorkspace.artifactDir, { skillDirectory: candidateSkillDir, catalog });
     const leakageErrors = validateMaterializedWorkspaceLeakage(
       caseWorkspace.workspace,
       prompt,
@@ -2819,9 +2868,11 @@ async function main() {
       const key = `${data.skill}/${item.id}`;
       return caseIdentity(data, item, frozenFixturesByCase.get(key), frozenOraclesByCase.get(key));
     });
-    for (const skill of selectedSkills) {
+    const availableSkills = skillLoading === "catalog" ? installedSkillNames() : selectedSkills;
+    for (const skill of availableSkills) {
+      const alternateDirectory = selectedSkills.includes(skill) ? candidateSkillDirInput : undefined;
       const liveDirectory = validateSkillArmDirectory(
-        resolveArmDirectory(candidateSkillDirInput, path.join(root, "skills", skill)),
+        resolveArmDirectory(alternateDirectory, path.join(root, "skills", skill)),
         skill
       );
       const directory = snapshotArmDirectory(liveDirectory, runSourceSnapshot, `candidate-${skill}`);
@@ -2834,9 +2885,9 @@ async function main() {
       if (leakageErrors.length > 0) throw new Error(leakageErrors.join("\n"));
       candidateDirectories[skill] = directory;
       candidateBySkill[skill] = candidateArmIdentity(directory, {
-        ablationId: process.env.LIVE_EVAL_ABLATION_ID,
-        ablationChange: process.env.LIVE_EVAL_ABLATION_CHANGE,
-        hypothesis: process.env.LIVE_EVAL_HYPOTHESIS
+        ablationId: alternateDirectory ? process.env.LIVE_EVAL_ABLATION_ID : undefined,
+        ablationChange: alternateDirectory ? process.env.LIVE_EVAL_ABLATION_CHANGE : undefined,
+        hypothesis: alternateDirectory ? process.env.LIVE_EVAL_HYPOTHESIS : undefined
       });
     }
     if (compareBaseline) {
@@ -2909,6 +2960,7 @@ async function main() {
             leakageOraclesByCase
           },
           candidateSkillDir: candidateDirectories[data.skill],
+          catalogDirectories: skillLoading === "catalog" ? candidateDirectories : null,
           codexHomes,
           frozenFixtures: frozenFixturesByCase.get(`${data.skill}/${item.id}`),
           frozenOracle: frozenOraclesByCase.get(`${data.skill}/${item.id}`) || null,
@@ -3055,6 +3107,7 @@ module.exports = {
   isEvaluatorOwnedPath,
   mapWithConcurrency,
   materializeFixtures,
+  materializeSkillCatalog,
   measurementsFor,
   median,
   normalizeCommandResult,

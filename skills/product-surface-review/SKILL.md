@@ -1,6 +1,6 @@
 ---
 name: product-surface-review
-description: Reviews user-facing workflows, empty, loading, error, and recovery states, accessibility, trust, support burden, and business goal alignment. Use when evaluating a product surface, feature flow, onboarding, settings, billing/admin screen, documentation touchpoint, or any user experience before build, release, or redesign. For a full code diff review, use review-code instead.
+description: Use when auditing a user workflow, onboarding, interface states, accessibility, or recovery before release. Review loading, empty, and error behavior only where relevant.
 ---
 
 # Product Surface Review

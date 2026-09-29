@@ -1,6 +1,6 @@
 {
   "skill": "strategy-to-options",
-  "version": 1,
+  "version": 2,
   "purpose": "Check that strategy prompts become real options with tradeoffs.",
   "positivePrompts": [
     "Using the completed vendor research, should we build, buy, or defer this platform capability?",
@@ -28,6 +28,25 @@
         "Produces 2-4 real options, including defer or no-build when plausible.",
         "Scores options across user impact, architecture, security/privacy, operations, cost, speed, and reversibility.",
         "Names when each option should be chosen."
+      ]
+    },
+    {
+      "id": "delegated-choice-continues",
+      "prompt": "Compare two ways to organize this settled release checklist: chronological order or grouped by owner. The checklist is: build package, verify package, notify the release owner. Choose the clearer reversible option and produce the finished checklist here. You are authorized to choose; no external action or repository edit is requested.",
+      "expectedSkill": "strategy-to-options",
+      "checks": [
+        "Makes a proportionate comparison and chooses an option within the explicit delegation.",
+        "Returns the finished checklist containing all three actions, rather than stopping to ask the user to choose.",
+        "Does not perform external actions or create repository files."
+      ]
+    },
+    {
+      "id": "options-only-stops",
+      "prompt": "Compare chronological and owner-grouped release checklists. I only want your recommendation; I will choose later. Do not draft the checklist or act on the choice.",
+      "expectedSkill": "strategy-to-options",
+      "checks": [
+        "Compares the two options and provides a recommendation.",
+        "Stops at the recommendation, without drafting the checklist or treating the recommendation as authorization."
       ]
     }
   ],

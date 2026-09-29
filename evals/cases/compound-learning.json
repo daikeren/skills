@@ -1,6 +1,6 @@
 {
   "skill": "compound-learning",
-  "version": 1,
+  "version": 2,
   "purpose": "Check that completed work produces reusable, non-secret lessons.",
   "positivePrompts": [
     "Capture the reusable lesson from this completed implementation.",
@@ -30,6 +30,16 @@
         "Uses read/apply mode and reports relevant lessons.",
         "Does not append, update, or supersede a lesson.",
         "Treats an existing lesson store as location evidence, not write authorization."
+      ]
+    },
+    {
+      "id": "bounded-work-bypasses-lesson-search",
+      "prompt": "Fix the grammar in this supplied release note and return only the corrected sentence: \"The setting were renamed.\" This is the complete task; no project decision or historical context is needed.",
+      "expectedSkill": "compound-learning",
+      "applicability": "bypass",
+      "checks": [
+        "Returns the corrected sentence directly.",
+        "Does not search lesson stores, create a lesson, or add a learning-workflow report."
       ]
     }
   ],

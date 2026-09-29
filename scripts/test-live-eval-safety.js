@@ -47,6 +47,7 @@ const {
   judgmentStatus,
   mapWithConcurrency,
   materializeFixtures,
+  materializeSkillCatalog,
   measurementsFor,
   normalizeCommandResult,
   normalizeComparison,
@@ -200,6 +201,28 @@ const bundledPrompt = buildPrompt(
 );
 assert.match(bundledPrompt, /Use the following Agent Skill bundle:/);
 assert.doesNotMatch(bundledPrompt, /Use the Agent Skill at /);
+const catalogTemp = fs.mkdtempSync(path.join(os.tmpdir(), "engineering-judgment-catalog-"));
+try {
+  const source = path.join(catalogTemp, "source");
+  const workspace = path.join(catalogTemp, "workspace");
+  fs.mkdirSync(path.join(source, "references"), { recursive: true });
+  fs.mkdirSync(workspace);
+  fs.writeFileSync(path.join(source, "SKILL.md"), "---\nname: example-skill\ndescription: >-\n  Use when explaining changes.\n  Read details only when needed.\n---\n\nROOT_BODY_SENTINEL\n");
+  fs.writeFileSync(path.join(source, "references", "details.md"), "REFERENCE_SENTINEL");
+  const catalog = materializeSkillCatalog({ "example-skill": source }, workspace);
+  const prompt = buildPrompt({ skill: "example-skill" }, { prompt: "Explain this change." }, [], "/tmp/artifacts", { catalog });
+  assert.match(prompt, /Use when explaining changes\. Read details only when needed\./);
+  assert.doesNotMatch(prompt, /ROOT_BODY_SENTINEL|REFERENCE_SENTINEL|Use the following Agent Skill bundle/);
+  assert.equal(fs.readFileSync(path.join(workspace, catalog[0].path), "utf8"), fs.readFileSync(path.join(source, "SKILL.md"), "utf8"));
+  assert.equal(fs.readFileSync(path.join(workspace, "skill-catalog/example-skill/references/details.md"), "utf8"), "REFERENCE_SENTINEL");
+  assert.throws(() => materializeSkillCatalog({ "example-skill": source }, workspace), /EEXIST/);
+  fs.symlinkSync(path.join(source, "SKILL.md"), path.join(source, "references", "linked.md"));
+  const unsafeWorkspace = path.join(catalogTemp, "unsafe");
+  fs.mkdirSync(unsafeWorkspace);
+  assert.throws(() => materializeSkillCatalog({ "example-skill": source }, unsafeWorkspace), /symbolic links/);
+} finally {
+  fs.rmSync(catalogTemp, { recursive: true, force: true });
+}
 assert.deepEqual(evidenceList("“exact runtime output”"), ["exact runtime output"]);
 assert.deepEqual(evidenceList(["\"first quote\"", "second quote"]), ["first quote", "second quote"]);
 assert.equal(evidenceAppearsInOutput("Exact runtime\noutput", ["Exact runtime\noutput"]), true);

@@ -1,6 +1,6 @@
 ---
 name: to-tickets
-description: Breaks a spec, plan, or settled conversation into independently reviewable, mergeable, and releasable tickets or issue descriptions. Use when drafting or revising implementation issue descriptions from settled delivery context, planning implementation slices, release sequencing, migrations, compatibility layers, feature flags, cleanup follow-ups, or tracer-bullet work that should land safely in small increments.
+description: Use when turning a settled spec or plan into implementation tickets, issue descriptions, or releasable vertical slices with acceptance criteria and blocking dependencies.
 ---
 
 # To Tickets

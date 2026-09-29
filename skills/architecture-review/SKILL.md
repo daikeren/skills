@@ -1,6 +1,6 @@
 ---
 name: architecture-review
-description: Reviews designs, docs, code, dependencies, data models, scaling paths, reliability, complexity, and maintenance risk. Use when evaluating architecture, major refactors, platform choices, migration plans, service boundaries, data flow, or operational risk. For reviewing a concrete code diff across all lenses, use review-code instead.
+description: Use when reviewing a system design, service boundary, dependency choice, or migration architecture. For a full code-diff review, use review-code.
 ---
 
 # Architecture Review

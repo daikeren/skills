@@ -2,7 +2,7 @@
 
 Use this reference whenever `understand-change` selects a disposable HTML artifact. The shell, sequence, and visual language stay stable so repeat users spend attention on the change rather than relearning the interface. Content depth and optional teaching modules remain adaptive.
 
-## Fixed Learning Sequence
+## Learning Sequence
 
 Use one long page with these landmarks and anchor IDs:
 
@@ -11,34 +11,34 @@ Use one long page with these landmarks and anchor IDs:
 3. `intuition`: a concrete toy example, a before/after causal comparison, and one prominent invariant. This is the visual center of the page.
 4. `walkthrough`: implementation chapters in runtime or data-flow order. Each chapter states role, behavior, relevant code, and edge case before moving on.
 5. `verification`: map each important claim or invariant to a test, trace, log, or manual check.
-6. `quiz`: three to five medium-difficulty transfer questions with per-question submission and feedback.
+6. Optional `quiz`: include transfer questions only when requested or when the participation goal requires an understanding gate. Choose the number needed to test that goal; HTML alone does not require a quiz.
 
 Use a persistent table of contents on wide screens and a compact `<details>` table of contents on narrow screens. The table of contents follows learning order, never file order.
 
 ## Adaptive Modes
 
-Keep the same landmarks while scaling content:
+Keep the relevant landmarks while scaling content. Omit quiz content and navigation when no understanding gate is needed:
 
 | Mode | Use when | Required treatment |
 | --- | --- | --- |
-| Compact | One local behavior or configuration change | One small before/after card, one invariant or compatibility statement, one walkthrough chapter, focused verification, three questions. Collapse background when it adds no value. |
-| Standard | Multi-file or cross-layer behavior | Full before/after causal diagram, two to five walkthrough chapters, explicit trade-off and edge cases, four or five questions. |
+| Compact | One local behavior or configuration change | One small before/after card, one invariant or compatibility statement, one walkthrough chapter, focused verification. Collapse background when it adds no value. |
+| Standard | Multi-file or cross-layer behavior | Full before/after causal diagram, two to five walkthrough chapters, explicit trade-off and edge cases. |
 | Dynamic | State, time, concurrency, recursion, coordinates, or multi-step transformation is the hard concept | Standard mode plus one narrow interactive model. Clearly label it as a learning model rather than production behavior. |
 
 Do not add tabs, dashboards, decorative hero art, or unrelated metrics. Prefer one coherent reading path with skippable depth.
 
 ## Cross-Concept Changes
 
-When a change spans several concepts, services, or frontend/backend layers, keep the fixed page sequence and add structure inside it:
+When a change spans several concepts, services, or frontend/backend layers, keep the learning sequence and add structure inside it:
 
 1. State one shared end-to-end outcome in `overview`. Do not present several unrelated mini-PRs unless the change truly has no coherent outcome.
 2. Use `intuition` for one system flow that crosses the important boundaries. Show what evidence enters, where it is normalized, which decision is made, and what the user observes.
 3. Add a compact concept map before the detailed walkthrough. Each concept card names its question, local invariant, inputs, outputs, and relevant chapters.
 4. Group walkthrough chapters by concept or contract boundary, not by directory, language, team, or frontend/backend label. A chapter may cite several files when they jointly implement one behavior.
 5. Insert an `.integration-checkpoint` between groups wherever a data shape, state owner, permission, error, fallback, or timing guarantee crosses the boundary. State both sides of the contract and what a mismatch would look like.
-6. End with an integration verification map and at least one quiz question that requires tracing across two concept groups.
+6. End with an integration verification map and, when an understanding gate is needed, a question that requires tracing across concept groups.
 
-Use hierarchical navigation for these pages: the top level keeps the fixed learning sequence, while the walkthrough entry may show indented concept groups and chapters. Do not turn concept groups into top-level tabs; readers need to preserve the end-to-end story.
+Use hierarchical navigation for these pages: the top level keeps the learning sequence, while the walkthrough entry may show indented concept groups and chapters. Do not turn concept groups into top-level tabs; readers need to preserve the end-to-end story.
 
 ## Page Frame
 
@@ -56,6 +56,7 @@ Use this semantic shape:
       <section id="intuition">...</section>
       <section id="walkthrough">...</section>
       <section id="verification">...</section>
+      <!-- Include only when an understanding gate is needed. -->
       <section id="quiz">...</section>
       <footer>Disposable learning artifact · not production documentation</footer>
     </main>
@@ -144,6 +145,8 @@ Use a compact table with columns `Claim`, `Evidence`, and `What failure would me
 
 ### Quiz
 
+Apply this section only when questions are requested or needed for an understanding gate. Otherwise omit it.
+
 Use native radio inputs grouped in `<fieldset>` elements. Each question has its own submit button and feedback region with `aria-live="polite"`. Hide correctness and explanation until that question is submitted. Do not persist or transmit answers.
 
 Balance option lengths so the correct answer is not consistently the longest. Rotate correct-answer positions across the quiz; when ordering is generated, use a deterministic seed so rendering and evaluation remain reproducible. After submission, preserve the learner's selection, show correct or incorrect state in text as well as color, and explain the underlying model rather than merely naming the answer.
@@ -172,7 +175,7 @@ Before handoff, verify at least one wide viewport and one narrow viewport. Check
 - learning order and active anchor navigation;
 - Chinese and English wrapping, code overflow, and minimum text size;
 - before/after comparison clarity without relying on color;
-- keyboard access, focus visibility, disclosure behavior, and quiz feedback;
+- keyboard access, focus visibility, disclosure behavior, and quiz feedback when present;
 - no network requests, CSP violations, console errors, unsafe fixture execution, or unreplaced template markers;
 - every source citation resolves to the inspected revision and shows a precise line or line range when one exists;
 - the page is labelled disposable and contains no unrelated sensitive values.

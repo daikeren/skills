@@ -126,6 +126,11 @@ The routing diagnostic compares prompts with skill descriptions using a determin
 
 For opt-in behavioral evaluation against a real agent:
 
+The default mode injects a selected skill bundle. Set
+`LIVE_EVAL_SKILL_LOADING=catalog` for non-comparative diagnostics of natural
+selection and on-demand reference reading. See [evaluation modes and their
+limits](evals/README.md#skill-loading).
+
 ```bash
 LIVE_EVAL_AGENT=codex npm run eval:live
 LIVE_EVAL_AGENT=claude-code npm run eval:live

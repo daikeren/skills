@@ -10,6 +10,41 @@ Live evaluation remains opt-in. `npm run validate` checks the deterministic
 schema, artifact, baseline-selection, aggregation, redaction, cleanup, and
 benchmark-policy contracts without calling a model.
 
+## Skill loading
+
+The default `LIVE_EVAL_SKILL_LOADING=bundle` supplies the selected skill and
+all its supporting files directly. It tests behavior after explicit invocation;
+it cannot measure discovery or the benefit of reading references on demand.
+
+Use `LIVE_EVAL_SKILL_LOADING=catalog` to diagnose those paths. The candidate
+receives the full installed roster's names, descriptions, and workspace-relative
+entrypoints. Frozen skill directories are copied into the isolated workspace,
+so the agent can select a skill, read only relevant references, or work directly.
+The prompt does not identify the expected skill or preload skill bodies.
+All catalog files are checked for oracle leakage, including unselected skills.
+The manifest records the loading mode and every catalog skill's identity; the
+workspace identity includes the materialized copies.
+
+```bash
+LIVE_EVAL_AGENT=codex \
+LIVE_EVAL_SKILL_LOADING=catalog \
+LIVE_EVAL_CASES=understand-change/small-change-uses-chat,understand-change/html-without-understanding-gate \
+npm run eval:live
+```
+
+Use task prompts that do not name a skill when assessing natural selection.
+Inspect retained execution traces for selected entrypoints, unnecessary reads,
+and bypass behavior, alongside task outcomes and available cost telemetry.
+Missing or truncated read telemetry is `unknown`, not evidence that no file was
+read. Catalog mode is a controlled harness diagnostic, not proof of identical
+routing in every host's native skill discovery system.
+
+Catalog mode currently rejects `LIVE_EVAL_COMPARE_BASELINE=1`: matched catalog
+baselines and a representative routing oracle are not implemented. It cannot
+support comparative benefit claims. Existing bundle comparisons remain
+available for instruction ablations. The new quiz, delegation, and bypass cases
+are contract checks, not ready portfolio benchmark entries.
+
 ## Reported dimensions
 
 Every comparative run reports these dimensions separately:

@@ -1,6 +1,6 @@
 ---
 name: setup-repo-context
-description: Detects, creates, and maintains lightweight repository context for agents. Use when onboarding an agent to a repository, setting up or refreshing repo-specific working instructions, finding local conventions for specs, tickets, reviews, verification, lessons, decisions, or AFK handoff, or reconciling stale agent context with current repository evidence. Default to read mode for discovery. Create or update context only when the user explicitly asks or a repo instruction explicitly requires maintenance; an existing context convention alone is not write authorization.
+description: Use when discovering, creating, or refreshing repository conventions for agents. Default to read mode; context maintenance requires authorization.
 ---
 
 # Setup Repo Context

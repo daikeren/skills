@@ -1,6 +1,6 @@
 ---
 name: to-spec
-description: Converts an already chosen direction, settled conversation, prototype learning, or option choice into a lightweight implementation spec with bounded pressure-testing, testing seams, and durable decision capture when warranted. Use when the direction is decided and the user needs goals, non-goals, constraints, UX or API contract, rollout, validation, and open questions without heavyweight PRD sludge. Use scope-work first when the problem frame or chosen direction is not stable enough to bound a spec.
+description: Use when writing an implementation spec from a settled direction, defining goals, non-goals, UX/API contracts, rollout, and validation. Resolve direction-changing decisions before finalizing.
 ---
 
 # To Spec

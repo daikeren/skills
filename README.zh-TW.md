@@ -118,6 +118,10 @@ Routing diagnostic 會用 deterministic lexical heuristic 比較 prompts 與 ski
 
 若要對真正的 agent 執行 opt-in behavioral evaluation：
 
+預設模式會直接注入指定 skill 的完整內容。設定
+`LIVE_EVAL_SKILL_LOADING=catalog` 可診斷自然選擇 skill 與按需讀取 reference
+的行為；此模式目前不支援 baseline 比較。詳見[評測模式與限制](evals/README.md#skill-loading)。
+
 ```bash
 LIVE_EVAL_AGENT=codex npm run eval:live
 LIVE_EVAL_AGENT=claude-code npm run eval:live

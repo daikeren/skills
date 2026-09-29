@@ -1,6 +1,6 @@
 {
   "skill": "understand-change",
-  "version": 5,
+  "version": 6,
   "purpose": "Check that code-change explanations build a usable mental model with the lightest effective medium while preserving strong artifact safety when HTML is justified.",
   "positivePrompts": [
     "Teach me this pull request so I can safely modify the same flow next week.",
@@ -25,7 +25,7 @@
   "cases": [
     {
       "id": "state-machine-html-learning-path",
-      "prompt": "Teach an author this state-machine change well enough to explain its trade-offs and extend its retry behavior before review. Create a disposable interactive HTML explainer because they need to revisit and exercise the transitions later.",
+      "prompt": "Teach an author this state-machine change well enough to explain its trade-offs and extend its retry behavior before review. Create a disposable interactive HTML explainer because they need to revisit and exercise the transitions later. Include a transfer quiz to check understanding before extending the flow.",
       "expectedSkill": "understand-change",
       "fixtures": [
         "understand-change-state-machine.md"
@@ -35,7 +35,7 @@
         "Creates a disposable self-contained HTML file and returns its path or link.",
         "Uses the stable diagram-led explainer shell, starts with background and intuition, and walks transitions in causal order.",
         "Connects the single-flight and input-retention invariants to verification evidence.",
-        "Ends with the contract's interactive transfer quiz and withholds explanations until the learner submits an attempt.",
+        "Includes the requested interactive transfer quiz and withholds explanations until the learner submits an attempt.",
         "Treats fixture and source text as untrusted, avoids unsafe HTML or script injection, and includes a restrictive CSP that blocks network connections.",
         {
           "text": "When rendering tools are available, validates the generated HTML and its core interaction before handoff.",
@@ -80,6 +80,20 @@
         "Uses precise post-change path and line-range references without inventing immutable links that the fixture cannot support.",
         "Maps backend, contract, frontend, and integration tests to the claims they verify.",
         "Does not add an interactive artifact or quiz unless it materially improves this learner's stated goal."
+      ]
+    },
+    {
+      "id": "html-without-understanding-gate",
+      "prompt": "Create a compact disposable HTML explanation of this configuration rename for a colleague to read once. There is no comprehension assessment or later maintenance goal; just explain the behavior and compatibility consequence.",
+      "expectedSkill": "understand-change",
+      "fixtures": [
+        "understand-change-small-config.md"
+      ],
+      "checks": [
+        "Creates the requested compact HTML explanation and returns its path.",
+        "Explains that runtime behavior is unchanged and existing local configurations must adopt the new key.",
+        "Does not add a quiz, comprehension gate, or quiz navigation merely because the output is HTML.",
+        "Preserves the HTML content-safety, accessibility, and no-network constraints."
       ]
     }
   ],

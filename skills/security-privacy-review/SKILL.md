@@ -1,6 +1,6 @@
 ---
 name: security-privacy-review
-description: Reviews authentication, authorization, sensitive data, integrations, public APIs, billing/admin surfaces, trust boundaries, abuse cases, and data minimization. Use when code, designs, specs, or products touch permissions, personal data, secrets, third-party systems, webhooks, payments, admin actions, AI outputs, or external exposure. For a full multi-lens diff review, use review-code instead.
+description: Use when asked for a focused security or privacy review of trust boundaries, permissions, sensitive data, or abuse risks. Use review-code for a full diff review.
 ---
 
 # Security Privacy Review

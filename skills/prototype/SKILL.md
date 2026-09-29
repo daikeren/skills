@@ -1,6 +1,6 @@
 ---
 name: prototype
-description: Runs disposable prototype exploration to learn product feel, technical feasibility, workflow, data shape, or integration risk before committing to production code, and disposable verification when the probe itself is the requested work product. Use when a throw-away proof of concept, spike, mock, harness, or experiment would reduce uncertainty faster than planning or prolonged inspection. Use implement-change instead when the requested outcome includes changing retained production code, even if a disposable probe is also needed.
+description: Use when building a disposable prototype or experiment to learn interaction feel, technical feasibility, or workflow behavior before committing to an implementation.
 ---
 
 # Prototype
